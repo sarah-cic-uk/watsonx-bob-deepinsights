@@ -1,43 +1,127 @@
-# watsonx-bob-deepinsights
+# DeepInsights — AI Recruiting Agent
 
-*Note: A lot of these docs are assumptions - exact features are NOT final and somewhat placeholder-y!*
+## The problem
 
-An AI agent that finds the top 5 best-fit candidates for an open Monday.com seat and writes them to a shortlist board — ranking by CV, travel restrictions, and whether another recruiter has already selected them.
+We have four Monday.com boards (TSC, FN, Looming Bench, Pipe) containing hundreds of candidates. Finding the right person for an open seat means:
 
-## Planned features
+1. Manually trawling all four boards for candidates in the right location, at the right band, with the right clearance
+2. Opening each match and reading through all the comments to check whether someone else has already claimed them, or whether they have travel restrictions (e.g. "will not travel out of Cheltenham")
+3. Tracking down their CV in Box, downloading it, and reading it to check their skills actually match
+4. Manually commenting on their Monday card to request an interview
 
-- Ask which Monday.com seat (open role) to recruit for.
-- Score candidates on CV fit, travel restrictions, and whether they're already selected by another recruiter.
-- Write the top 5 candidates to a separate shortlist board.
+This is slow, repetitive, and easy to get wrong. DeepInsights automates the whole pipeline.
+
+---
+
+## What it does
+
+You paste in a job advert (or describe the open seat). The agent does the rest:
+
+1. **Scrapes the four Monday boards** — TSC, FN, Looming Bench, Pipe
+2. **Filters candidates** by base location, band level, and security clearance
+3. **Reads each candidate's comments** to skip anyone already claimed or with blocking travel restrictions
+4. **Downloads their CV from Box** and extracts the full text
+5. **Matches CV skills against the job description** to confirm a genuine fit
+6. **Comments on their Monday card** to request an interview, tagging the right people — e.g. `{Business Unit} interested to interview @ Brad @ Sian`
+7. **Adds matched candidates to your own team Monday board** so you can track their progress independently
+
+---
+
+## Nice to haves (future)
+
+- **Availability notifications** — if a candidate comments back with availability, surface that to you automatically
+- **Band-grade inference** — score the CV to suggest which band level it maps to, so you make the right salary offer from the start
+
+---
+
+## Architecture
+
+```
+Job advert (input)
+       │
+       ▼
+┌─────────────────────┐
+│  Monday board scraper│  ◄── 4 boards: TSC, FN, Looming Bench, Pipe
+│  (monday.js)        │       filters: location / band / clearance / comments
+└────────┬────────────┘
+         │  candidate shortlist
+         ▼
+┌─────────────────────┐
+│  Box CV scraper     │  ◄── IBM Box (ibm.ent.box.com)
+│  (box_scraper.js)   │       downloads PDFs, extracts text via pdf-parse
+└────────┬────────────┘
+         │  CV text
+         ▼
+┌─────────────────────┐
+│  Skills matcher     │       compares CV skills to job description
+└────────┬────────────┘
+         │  confirmed matches
+         ▼
+┌─────────────────────┐
+│  Monday commenter   │       posts interview request on each candidate's card
+│                     │       adds candidates to your team tracking board
+└─────────────────────┘
+```
+
+---
+
+## Current state
+
+The two hardest integration risks have been derisked with working proof-of-concept scripts:
+
+| Component | Status |
+|---|---|
+| Monday.com GraphQL client | Working — reads boards, items, comments |
+| Box CV scraper | Working — authenticates via IBM SSO, downloads PDFs, extracts text |
+| Skills matching | Not started |
+| Monday commenter | Not started |
+| End-to-end agent orchestration | Not started |
+
+See [Monday_scraper_prompt.md](Monday_scraper_prompt.md) and [box_scraper_prompt.md](box_scraper_prompt.md) for the proof-of-concept implementation details.
+
+---
 
 ## Setup
 
-1. **Requirements:** Node.js 18+ (uses built-in `fetch`).
+### Prerequisites
 
-2. **Get an API token:** in Monday.com, click your avatar → **Developers** → **My Access Tokens** → copy.
+- Node.js 18+
+- Access to IBM Monday.com and IBM Box (w3id SSO)
 
-3. **Save the token** (only the token, one line) to a gitignored file:
+### Monday API token
 
+1. In Monday.com: avatar → **Developers** → **My Access Tokens** → copy
+2. Save it (one line, no quotes) to:
    ```
-   untracked/.monday-token
+   .monday-token
    ```
+   Or export as `MONDAY_API_TOKEN` in your environment.
 
-   Or set the `MONDAY_API_TOKEN` environment variable instead.
+### Verify connections
 
-4. **Verify the connection** (prints your account + all visible boards):
+```bash
+# Test Monday connection
+node monday.js
 
-   ```bash
-   node monday.js
-   ```
-
-## Usage
-
-```js
-const { mondayQuery } = require('./monday');
-
-const data = await mondayQuery(`query { me { name email } }`);
+# Test Box scraper (requires Playwright MCP)
+# See box_scraper_prompt.md for full setup
 ```
 
-`monday.js` also exports `listAllBoards()`.
+---
 
-> **Note:** `api.monday.com/v2` is one shared endpoint for all customers; the token pins each request to the IBM account. Never use `ibm.monday.com` as an API URL.
+## The four Monday boards
+
+| Board | Description |
+|---|---|
+| **TSC** | Technical and specialist consultants |
+| **FN** | FutureNow external hires |
+| **Looming Bench** | People rolling off projects soon |
+| **Pipe** | Pipeline — candidates in process |
+
+
+## Commands 
+
+To run the full thing: 
+ ``` node cv-skills-matcher.js 'job ad.txt' ```
+
+node box_scraper.js 'https://ibm.ent.box.com/file/2222222222'

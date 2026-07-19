@@ -1,6 +1,13 @@
-# AI Agents Prompts
-AGENTS.md
-CLAUDE.md
 
-# Untracked Files
 untracked/
+.w3_session.json
+.box_session.json
+node_modules/
+credentials.csv
+credentials.xlsx
+cv_data.csv
+cv_data.xlsx
+cv_downloads/
+.monday-token
+.claude
+*.xlsx

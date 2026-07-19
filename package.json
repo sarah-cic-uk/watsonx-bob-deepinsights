@@ -4,7 +4,8 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "scrape": "node scraper.js"
   },
   "repository": {
     "type": "git",
@@ -17,5 +18,11 @@
   "bugs": {
     "url": "https://github.com/sarah-cic-uk/watsonx-bob-deepinsights/issues"
   },
-  "homepage": "https://github.com/sarah-cic-uk/watsonx-bob-deepinsights#readme"
+  "homepage": "https://github.com/sarah-cic-uk/watsonx-bob-deepinsights#readme",
+  "dependencies": {
+    "mammoth": "^1.12.0",
+    "pdf-parse": "^1.1.4",
+    "playwright": "^1.61.1",
+    "xlsx": "^0.18.5"
+  }
 }

@@ -1,0 +1,6 @@
+    Role: Senior Software Engineer  
+    Band: 7  
+    Level: L2  
+    Location: London
+    Skills: AWS, javascript, cloudformation, terraform, docker, react, vue
+    

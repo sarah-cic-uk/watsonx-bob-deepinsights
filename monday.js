@@ -6,7 +6,7 @@
 //
 // The token is read from (in priority order):
 //   1. process.env.MONDAY_API_TOKEN
-//   2. untracked/.monday-token   (gitignored - never committed)
+//   2. .monday-token   (gitignored - never committed)
 //
 // Usage as a module:
 //   const { mondayQuery } = require('./monday');
@@ -19,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 
 const API_URL = 'https://api.monday.com/v2';
-const TOKEN_FILE = path.join(__dirname, 'untracked', '.monday-token');
+const TOKEN_FILE = path.join(__dirname, '.monday-token');
 
 function loadToken() {
   if (process.env.MONDAY_API_TOKEN && process.env.MONDAY_API_TOKEN.trim()) {
@@ -102,7 +102,121 @@ async function listAllBoards() {
   return all;
 }
 
-module.exports = { mondayQuery, loadToken, listAllBoards, API_URL };
+/**
+ * Fetch all items (with column values and latest comments) from a single board.
+ * Also returns the board's column definitions so callers can look up columns by title.
+ * Returns { columns, items } where columns is [{ id, title }].
+ */
+async function getBoardItems(boardId) {
+  const items = [];
+  let columns = null;
+  let cursor = null;
+
+  do {
+    const data = await mondayQuery(
+      `query ($boardId: ID!, $cursor: String) {
+        boards(ids: [$boardId]) {
+          columns { id title }
+          items_page(limit: 100, cursor: $cursor) {
+            cursor
+            items {
+              id
+              name
+              column_values { id text value }
+              updates(limit: 10) {
+                id
+                body
+                creator { name email }
+                created_at
+              }
+            }
+          }
+        }
+      }`,
+      { boardId: String(boardId), cursor }
+    );
+
+    const board = data.boards?.[0];
+    if (!board) break;
+    if (!columns) columns = board.columns || [];
+    const page = board.items_page;
+    if (!page) break;
+    items.push(...(page.items || []));
+    cursor = page.cursor || null;
+  } while (cursor);
+
+  return { columns: columns || [], items };
+}
+
+/**
+ * Fetch items from all source boards defined in boards.config.js.
+ * Returns { boardId, boardName, columns, items }[] — one entry per board.
+ */
+async function getCandidateBoardItems() {
+  const { sourceBoardIds } = require('./boards.config');
+
+  const results = await Promise.all(
+    sourceBoardIds.map(async (boardId) => {
+      const meta = await mondayQuery(
+        `query ($boardId: ID!) { boards(ids: [$boardId]) { id name } }`,
+        { boardId: String(boardId) }
+      );
+      const boardName = meta.boards?.[0]?.name ?? boardId;
+      const { columns, items } = await getBoardItems(boardId);
+      return { boardId, boardName, columns, items };
+    })
+  );
+
+  return results;
+}
+
+/**
+ * Post a comment on a Monday item.
+ * @param {string} itemId  The item's ID.
+ * @param {string} body    The comment text.
+ */
+async function addComment(itemId, body) {
+  return mondayQuery(
+    `mutation ($itemId: ID!, $body: String!) {
+      create_update(item_id: $itemId, body: $body) { id }
+    }`,
+    { itemId: String(itemId), body }
+  );
+}
+
+/**
+ * Create a new item on the tracking board defined in boards.config.js.
+ * @param {string} itemName   Display name for the new item.
+ * @param {object} columnValues  Optional map of column_id -> value (JSON-stringified per Monday spec).
+ * @returns {Promise<string>} The new item's ID.
+ */
+async function addToTrackingBoard(itemName, columnValues = {}) {
+  const { trackingBoardId } = require('./boards.config');
+
+  const data = await mondayQuery(
+    `mutation ($boardId: ID!, $itemName: String!, $colVals: JSON) {
+      create_item(board_id: $boardId, item_name: $itemName, column_values: $colVals) { id }
+    }`,
+    {
+      boardId: String(trackingBoardId),
+      itemName,
+      colVals: Object.keys(columnValues).length ? JSON.stringify(columnValues) : null,
+    }
+  );
+
+  return data.create_item?.id;
+}
+
+module.exports = {
+  mondayQuery,
+  loadToken,
+  listAllBoards,
+  getBoardItems,
+  getCandidateBoardItems,
+  addComment,
+  addToTrackingBoard,
+  API_URL,
+};
 
 // When run directly: verify the token works and print who we are + every board.
 if (require.main === module) {
