@@ -1,0 +1,36 @@
+JANE DOE
+Senior Software Engineer | London
+
+PROFESSIONAL SUMMARY
+Experienced full-stack engineer with 5+ years building cloud-native applications.
+Expert in AWS architecture, React frontend development, and modern JavaScript.
+
+EXPERIENCE
+
+Senior Software Engineer — TechCorp (2021–present)
+- Designed and deployed microservices on AWS Lambda and ECS
+- Led React UI team, modernized legacy Vue codebase to React
+- Wrote infrastructure-as-code using Terraform and CloudFormation
+- Mentored junior developers in JavaScript best practices
+- Containerized applications with Docker and orchestrated with Kubernetes
+
+Software Engineer — StartupXYZ (2019–2021)
+- Built real-time dashboards in React with Redux state management
+- Developed RESTful APIs in Node.js
+- Managed AWS S3, RDS, and CloudFront for production systems
+- Implemented CI/CD pipelines with GitHub Actions
+
+SKILLS
+Languages: JavaScript, TypeScript, Python
+Frontend: React, Vue, HTML/CSS
+Cloud: AWS (EC2, S3, Lambda, RDS, CloudFormation, Terraform)
+Containerization: Docker, Kubernetes
+Databases: PostgreSQL, MongoDB
+Tools: Git, GitHub, Webpack, Docker, npm
+
+CERTIFICATIONS
+AWS Solutions Architect Associate (2022)
+Certified Kubernetes Administrator (2021)
+
+EDUCATION
+BSc Computer Science, University of Manchester (2019)
