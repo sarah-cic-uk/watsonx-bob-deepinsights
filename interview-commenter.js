@@ -15,6 +15,28 @@
 const { addComment, listUsers } = require('./monday');
 const { businessUnit, tagUsers } = require('./boards.config');
 
+/**
+ * The candidate object this module consumes — the frozen pipeline data contract.
+ * See README → "Data contract" (frozen 20 Jul). Produced by findCandidates(),
+ * enriched by filterBySkills(). All IDs are strings.
+ *
+ * NOTE: `role` is the candidate's *own* raw board text (their current role), NOT
+ * the role we're hiring for. The interview-request comment must use the JOB's role
+ * (passed in via opts.role from the job ad), never this field.
+ *
+ * @typedef {object} Candidate
+ * @property {string} boardId    Monday board ID
+ * @property {string} boardName  Friendly board name (e.g. "TSC")
+ * @property {string} itemId     Monday item ID — the card we comment on
+ * @property {string} name       Candidate name
+ * @property {string} role       Candidate's raw board role text (NOT the job role)
+ * @property {string} band       Raw board text
+ * @property {string} level      Raw board text
+ * @property {string} location   Raw board text
+ * @property {string} cvLink     Box CV link, "" if none
+ * @property {Array<{id:string, body:string, creator:{name:string,email:string}}>} comments  Up to 10 updates
+ */
+
 // ---------------------------------------------------------------------------
 // Resolve configured tag entries (names or numeric IDs) to { id, name }
 // ---------------------------------------------------------------------------
@@ -69,16 +91,18 @@ async function resolveTagUsers(entries, users) {
 /**
  * Build the interview-request comment for a candidate.
  *
- * @param {object} candidate           A shortlist entry (needs `name`; `role` optional).
+ * @param {Candidate} candidate         A shortlist entry (needs `name` + `itemId`).
  * @param {Array<{id,name}>} taggedUsers Resolved users to notify.
  * @param {object} [opts]
  * @param {string} [opts.businessUnit]  Overrides the config business unit.
- * @param {string} [opts.role]          Role to interview for; falls back to candidate.role.
+ * @param {string} [opts.role]          The JOB's role we're hiring for (from the job ad).
+ *                                      If omitted, the "for {role}" clause is dropped —
+ *                                      we never fall back to the candidate's board role.
  * @returns {{ body: string, mentions: Array<{id,type:'User'}> }}
  */
 function buildComment(candidate, taggedUsers = [], opts = {}) {
   const bu = opts.businessUnit || businessUnit || 'We';
-  const role = (opts.role || candidate.role || '').trim();
+  const role = (opts.role || '').trim();
   const mentionText = taggedUsers.map(u => `@${u.name}`).join(' ');
 
   const forRole = role ? ` for ${role}` : '';
@@ -96,10 +120,10 @@ function buildComment(candidate, taggedUsers = [], opts = {}) {
 /**
  * Draft or post an interview-request comment for each shortlisted candidate.
  *
- * @param {Array} shortlist  Output of filterBySkills() — each entry needs itemId + name.
+ * @param {Candidate[]} shortlist  Contract objects from filterBySkills() (needs itemId + name).
  * @param {object} [opts]
  * @param {boolean} [opts.post=false]   false = dry-run (print only); true = post to Monday.
- * @param {string}  [opts.role]         Role to interview for (defaults per-candidate).
+ * @param {string}  [opts.role]         The JOB's role we're hiring for (from the job ad).
  * @param {Array<string|number>} [opts.tagUsers]  Overrides config tagUsers.
  * @returns {Promise<Array>} One result per candidate:
  *   { candidate, body, mentions, posted, updateId?, error? }
