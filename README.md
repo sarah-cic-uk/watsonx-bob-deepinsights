@@ -73,8 +73,8 @@ The two hardest integration risks have been derisked with working proof-of-conce
 |---|---|
 | Monday.com GraphQL client | Working — reads boards, items, comments |
 | Box CV scraper | Working — authenticates via IBM SSO, downloads PDFs, extracts text |
-| Skills matching | Not started |
-| Monday commenter | Not started |
+| Skills matching | Working — `cv-skills-matcher.js` scores CVs against required skills |
+| Monday commenter | Working — `interview-commenter.js` drafts/posts interview requests with real @mentions (dry-run by default) |
 | End-to-end agent orchestration | Not started |
 
 See [Monday_scraper_prompt.md](Monday_scraper_prompt.md) and [box_scraper_prompt.md](box_scraper_prompt.md) for the proof-of-concept implementation details.

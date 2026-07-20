@@ -171,17 +171,38 @@ async function getCandidateBoardItems() {
 }
 
 /**
- * Post a comment on a Monday item.
+ * Post a comment (update) on a Monday item.
+ *
  * @param {string} itemId  The item's ID.
- * @param {string} body    The comment text.
+ * @param {string} body    The comment text. Include readable "@Name" text for
+ *                         each mention so the update reads naturally; the actual
+ *                         notification is driven by `mentions`, not the body.
+ * @param {Array<{id: (string|number), type?: string}>} [mentions]
+ *   People/teams/boards to notify. Each entry defaults to type "User".
+ *   Monday triggers the real notification from this list, not from body markup.
+ * @returns {Promise<object>} The created update ({ id }).
  */
-async function addComment(itemId, body) {
+async function addComment(itemId, body, mentions = []) {
+  const mentionsList = (mentions || []).map(m => ({
+    id: Number(m.id),
+    type: m.type || 'User',
+  }));
+
   return mondayQuery(
-    `mutation ($itemId: ID!, $body: String!) {
-      create_update(item_id: $itemId, body: $body) { id }
+    `mutation ($itemId: ID!, $body: String!, $mentions: [MentionInput!]) {
+      create_update(item_id: $itemId, body: $body, mentions_list: $mentions) { id }
     }`,
-    { itemId: String(itemId), body }
+    { itemId: String(itemId), body, mentions: mentionsList.length ? mentionsList : null }
   );
+}
+
+/**
+ * Fetch every user in the account (used to resolve names -> user IDs for mentions).
+ * @returns {Promise<Array<{id: string, name: string, email: string}>>}
+ */
+async function listUsers() {
+  const data = await mondayQuery(`query { users { id name email } }`);
+  return data.users || [];
 }
 
 /**
@@ -214,6 +235,7 @@ module.exports = {
   getBoardItems,
   getCandidateBoardItems,
   addComment,
+  listUsers,
   addToTrackingBoard,
   API_URL,
 };

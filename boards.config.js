@@ -13,4 +13,15 @@ module.exports = {
 
   // New candidate entries (confirmed matches) are written to this board.
   trackingBoardId: '18419952794',
+
+  // --- Interview-request comment settings (used by interview-commenter.js) ---
+
+  // Business unit name that leads the comment, e.g.
+  //   "watsonx interested to interview Jane Doe for Senior Software Engineer ..."
+  businessUnit: 'watsonx',
+
+  // People to tag (notify) on each interview-request comment.
+  // Entries may be either a person's display name (resolved to their Monday user
+  // ID at runtime) or a numeric user ID directly (more reliable — no ambiguity).
+  tagUsers: ['Brad', 'Sian'],
 };
