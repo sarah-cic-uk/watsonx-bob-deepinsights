@@ -83,6 +83,32 @@ See [Monday_scraper_prompt.md](Monday_scraper_prompt.md) and [box_scraper_prompt
 
 ## Setup
 
+## Data contract
+
+**Frozen 20 Jul.** The candidate object that flows through the pipeline has this shape. Don't rename or remove fields without posting in the team channel first. Adding new fields is always fine.
+
+```js
+{
+  boardId:   "10036665903",       // string — Monday board ID
+  boardName: "TSC",               // string — friendly name
+  itemId:    "1234567890",        // string — Monday item ID
+  name:      "Jane Doe",          // string — candidate name
+  role:      "Software Engineer", // string — raw board text
+  band:      "7A",                // string — raw board text
+  level:     "L2",                // string — raw board text
+  location:  "London",            // string — raw board text
+  cvLink:    "https://ibm.ent.box.com/file/…",  // string, "" if no CV
+  comments:  [                    // array of Monday updates (max 10)
+    { id: "111", body: "<p>text</p>", creator: { name: "…", email: "…" } }
+  ]
+}
+```
+
+Produced by: `findCandidates()` in `candidate-matcher.js`  
+Consumed by: `filterBySkills()` in `cv-skills-matcher.js`, and the Monday commenter
+
+---
+
 ### Prerequisites
 
 - Node.js 18+
