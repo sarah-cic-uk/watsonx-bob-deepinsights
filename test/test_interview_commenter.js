@@ -90,23 +90,26 @@ function candidate(overrides = {}) {
   console.log('buildComment()');
   // -------------------------------------------------------------------------
 
-  await test('builds body with business unit, name, job role and @mentions', () => {
+  await test('builds body with business unit, name, job role; mentions in payload not body', () => {
     const tagged = [
       { id: '101', name: 'Brad' },
       { id: '202', name: 'Sian' },
     ];
-    const { body, mentions } = buildComment(candidate(), tagged, {
+    const { body, mentions, mentionNames } = buildComment(candidate(), tagged, {
       businessUnit: 'watsonx',
       role: 'Senior Software Engineer',
     });
+    // Body must NOT contain the @mentions — Monday appends them itself from
+    // mentions_list; duplicating them in the body double-tags (verified live).
     assert.equal(
       body,
-      'watsonx interested to interview Jane Doe for Senior Software Engineer @Brad @Sian'
+      'watsonx interested to interview Jane Doe for Senior Software Engineer'
     );
     assert.deepEqual(mentions, [
       { id: '101', type: 'User' },
       { id: '202', type: 'User' },
     ]);
+    assert.deepEqual(mentionNames, ['@Brad', '@Sian']);
   });
 
   await test('omits the "for {role}" clause when no job role is supplied', () => {
@@ -211,7 +214,10 @@ function candidate(overrides = {}) {
     const [itemIdArg, bodyArg, mentionsArg] = addCommentCalls[0];
     assert.equal(typeof itemIdArg, 'string', 'itemId must be passed as a string');
     assert.equal(itemIdArg, '1234567890');
-    assert.ok(bodyArg.includes('Jane Doe') && bodyArg.includes('SRE') && bodyArg.includes('@Brad'));
+    // Body carries the sentence; the tag is delivered via the mentions payload
+    // (Monday renders it), so @Brad must NOT be in the body text.
+    assert.ok(bodyArg.includes('Jane Doe') && bodyArg.includes('SRE'));
+    assert.ok(!bodyArg.includes('@Brad'), `mention leaked into body: "${bodyArg}"`);
     assert.deepEqual(mentionsArg, [{ id: '101', type: 'User' }]);
 
     assert.equal(results[0].posted, true);
@@ -235,6 +241,43 @@ function candidate(overrides = {}) {
     }
     // reset for any later tests
     addCommentImpl = async () => ({ create_update: { id: 'upd_1' } });
+  });
+
+  await test('tags per board from tagUsersByBoard (different people per board)', async () => {
+    addCommentCalls = [];
+    addCommentImpl = async () => ({ create_update: { id: 'upd_x' } });
+    const shortlist = [
+      candidate({ itemId: 'A1', boardId: 'boardA' }),
+      candidate({ itemId: 'B1', boardId: 'boardB' }),
+    ];
+    await quiet(() =>
+      postInterviewRequests(shortlist, {
+        post: true,
+        role: 'SRE',
+        tagUsersByBoard: { boardA: ['Brad'], boardB: ['Sian'] },
+      })
+    );
+    assert.equal(addCommentCalls.length, 2);
+    const mentionsByItem = Object.fromEntries(
+      addCommentCalls.map(([itemId, , mentions]) => [itemId, mentions])
+    );
+    assert.deepEqual(mentionsByItem['A1'], [{ id: '101', type: 'User' }]); // Brad
+    assert.deepEqual(mentionsByItem['B1'], [{ id: '202', type: 'User' }]); // Sian
+  });
+
+  await test('falls back to defaultTagUsers for a board not in the map', async () => {
+    addCommentCalls = [];
+    addCommentImpl = async () => ({ create_update: { id: 'upd_x' } });
+    await quiet(() =>
+      postInterviewRequests([candidate({ itemId: 'Z1', boardId: 'unlisted' })], {
+        post: true,
+        role: 'SRE',
+        tagUsersByBoard: { boardA: ['Brad'] },
+        defaultTagUsers: ['Sian'],
+      })
+    );
+    assert.equal(addCommentCalls.length, 1);
+    assert.deepEqual(addCommentCalls[0][2], [{ id: '202', type: 'User' }]); // Sian (fallback)
   });
 
   await test('returns [] for an empty shortlist and never posts', async () => {

@@ -13,7 +13,7 @@
 // for me to send manually" fallback.
 
 const { addComment, listUsers } = require('./monday');
-const { businessUnit, tagUsers } = require('./boards.config');
+const { businessUnit, tagUsersByBoard, defaultTagUsers } = require('./boards.config');
 
 /**
  * The candidate object this module consumes — the frozen pipeline data contract.
@@ -73,8 +73,9 @@ async function resolveTagUsers(entries, users) {
 
   for (const id of ids) {
     const known = byId.find(u => String(u.id) === id);
+    // An ID we can't attach a name to is still tagged fine (the mention works by
+    // ID) — display name just falls back to the ID. Not a problem worth flagging.
     resolved.push({ id, name: known?.name || id });
-    if (!known) problems.push(`user ID ${id} not found (still tagged, but display name unknown)`);
   }
   for (const email of emails) {
     const hit = byEmail.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
@@ -142,32 +143,56 @@ function buildComment(candidate, taggedUsers = [], opts = {}) {
  * @param {object} [opts]
  * @param {boolean} [opts.post=false]   false = dry-run (print only); true = post to Monday.
  * @param {string}  [opts.role]         The JOB's role we're hiring for (from the job ad).
+ * @param {Object<string, Array>} [opts.tagUsersByBoard]  Per-board tag lists (defaults to config).
+ * @param {Array}   [opts.defaultTagUsers]  Fallback taggers for unlisted boards (defaults to config).
+ * @param {Array}   [opts.tagUsers]     Flat list applied to EVERY candidate; overrides the per-board maps.
  * @param {Array<string|number>} [opts.tagUsers]  Overrides config tagUsers.
  * @returns {Promise<Array>} One result per candidate:
  *   { candidate, body, mentions, posted, updateId?, error? }
  */
 async function postInterviewRequests(shortlist, opts = {}) {
   const post = opts.post === true;
-  const entries = opts.tagUsers || tagUsers || [];
 
-  const { resolved, problems } = await resolveTagUsers(entries);
-  for (const p of problems) console.warn(`  [tag] ${p}`);
+  // Tag source, in priority order:
+  //   1. opts.tagUsers      — a flat list applied to EVERY candidate (one-off / tests)
+  //   2. tagUsersByBoard    — per-board lists keyed by candidate.boardId (config default)
+  //      falling back to defaultTagUsers for any board not listed.
+  const overrideEntries = opts.tagUsers;                     // undefined unless explicitly passed
+  const byBoard = opts.tagUsersByBoard || tagUsersByBoard || {};
+  const fallback = opts.defaultTagUsers || defaultTagUsers || [];
 
   if (!shortlist.length) {
     console.log('No shortlisted candidates — nothing to comment on.');
     return [];
   }
 
+  // Resolve each board's tag list once and cache it (avoids re-hitting the API
+  // for every candidate on the same board).
+  const cache = new Map();
+  async function resolveForBoard(boardId) {
+    const key = overrideEntries !== undefined ? '__override__' : (boardId || '__none__');
+    if (cache.has(key)) return cache.get(key);
+
+    const entries = overrideEntries !== undefined ? overrideEntries : (byBoard[boardId] || fallback);
+    const { resolved, problems } = await resolveTagUsers(entries);
+    for (const p of problems) console.warn(`  [tag] board ${boardId}: ${p}`);
+    if (!entries.length) {
+      console.warn(`  [tag] board ${boardId}: no tag users configured — nobody will be notified`);
+    } else {
+      console.log(`  [tag] board ${boardId} → ${resolved.map(u => `${u.name} (${u.id})`).join(', ') || '(none resolved)'}`);
+    }
+    cache.set(key, resolved);
+    return resolved;
+  }
+
   console.log(
     `\n${post ? 'Posting' : 'DRAFTING (dry-run — nothing will be posted)'} ` +
-      `interview requests for ${shortlist.length} candidate(s).`
-  );
-  console.log(
-    `Tagging: ${resolved.length ? resolved.map(u => `${u.name} (${u.id})`).join(', ') : '(nobody)'}\n`
+      `interview requests for ${shortlist.length} candidate(s).\n`
   );
 
   const results = [];
   for (const candidate of shortlist) {
+    const resolved = await resolveForBoard(candidate.boardId);
     const { body, mentions, mentionNames } = buildComment(candidate, resolved, { role: opts.role });
     const result = { candidate, body, mentions, posted: false };
 
