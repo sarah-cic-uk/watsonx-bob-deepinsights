@@ -56,28 +56,44 @@ async function resolveTagUsers(entries, users) {
   const problems = [];
   if (!entries || !entries.length) return { resolved, problems };
 
-  // Fetch the account users once — needed to resolve names, and to attach a
-  // readable display name to raw numeric IDs so the comment reads "@Brad" not "@11".
-  const allUsers = users || await listUsers();
-
+  // Partition entries by how we can resolve them. IDs and emails resolve exactly
+  // regardless of account size; plain names can only be matched against a single
+  // page of users, which is unreliable in a large org.
+  const ids = [], emails = [], names = [];
   for (const entry of entries) {
     const str = String(entry).trim();
+    if (/^\d+$/.test(str)) ids.push(str);
+    else if (str.includes('@')) emails.push(str);
+    else names.push(str);
+  }
 
-    if (/^\d+$/.test(str)) {
-      // Numeric — treat as a user ID. Attach a name if we happen to know it.
-      const known = allUsers.find(u => String(u.id) === str);
-      resolved.push({ id: str, name: known?.name || str });
-      continue;
-    }
+  // Exact lookups (skip the API entirely if a user list was injected, e.g. tests).
+  const byId    = users ? users : (ids.length    ? await listUsers({ ids })       : []);
+  const byEmail = users ? users : (emails.length ? await listUsers({ emails })    : []);
 
-    const hits = allUsers.filter(u => u.name && u.name.toLowerCase() === str.toLowerCase());
-    if (hits.length === 1) {
-      resolved.push({ id: String(hits[0].id), name: hits[0].name });
-    } else if (hits.length === 0) {
-      problems.push(`no Monday user named "${str}" — will not be tagged`);
-    } else {
-      const ids = hits.map(h => h.id).join(', ');
-      problems.push(`"${str}" is ambiguous (matches user IDs ${ids}) — use the numeric ID in boards.config.js`);
+  for (const id of ids) {
+    const known = byId.find(u => String(u.id) === id);
+    resolved.push({ id, name: known?.name || id });
+    if (!known) problems.push(`user ID ${id} not found (still tagged, but display name unknown)`);
+  }
+  for (const email of emails) {
+    const hit = byEmail.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+    if (hit) resolved.push({ id: String(hit.id), name: hit.name });
+    else problems.push(`no Monday user with email "${email}" — will not be tagged`);
+  }
+
+  // Name matching: only reliable on small accounts. Warn and recommend ID/email.
+  if (names.length) {
+    const page = users || await listUsers();
+    for (const name of names) {
+      const hits = page.filter(u => u.name && u.name.toLowerCase() === name.toLowerCase());
+      if (hits.length === 1) {
+        resolved.push({ id: String(hits[0].id), name: hits[0].name });
+      } else if (hits.length === 0) {
+        problems.push(`no match for name "${name}" in the first page of users — in a large account, use their numeric ID or email in boards.config.js`);
+      } else {
+        problems.push(`"${name}" is ambiguous (IDs ${hits.map(h => h.id).join(', ')}) — use the numeric ID or email`);
+      }
     }
   }
 
@@ -98,19 +114,21 @@ async function resolveTagUsers(entries, users) {
  * @param {string} [opts.role]          The JOB's role we're hiring for (from the job ad).
  *                                      If omitted, the "for {role}" clause is dropped —
  *                                      we never fall back to the candidate's board role.
- * @returns {{ body: string, mentions: Array<{id,type:'User'}> }}
+ * @returns {{ body: string, mentions: Array<{id,type:'User'}>, mentionNames: string[] }}
+ *
+ * NOTE: the body deliberately contains NO "@Name" text. When mentions_list is set,
+ * Monday appends the clickable mention (e.g. "@Brad") to the update itself — adding
+ * it to the body too would double it up.
  */
 function buildComment(candidate, taggedUsers = [], opts = {}) {
   const bu = opts.businessUnit || businessUnit || 'We';
   const role = (opts.role || '').trim();
-  const mentionText = taggedUsers.map(u => `@${u.name}`).join(' ');
-
   const forRole = role ? ` for ${role}` : '';
-  const tail = mentionText ? ` ${mentionText}` : '';
-  const body = `${bu} interested to interview ${candidate.name}${forRole}${tail}`.trim();
+  const body = `${bu} interested to interview ${candidate.name}${forRole}`.trim();
 
   const mentions = taggedUsers.map(u => ({ id: u.id, type: 'User' }));
-  return { body, mentions };
+  const mentionNames = taggedUsers.map(u => `@${u.name}`);
+  return { body, mentions, mentionNames };
 }
 
 // ---------------------------------------------------------------------------
@@ -150,11 +168,14 @@ async function postInterviewRequests(shortlist, opts = {}) {
 
   const results = [];
   for (const candidate of shortlist) {
-    const { body, mentions } = buildComment(candidate, resolved, { role: opts.role });
+    const { body, mentions, mentionNames } = buildComment(candidate, resolved, { role: opts.role });
     const result = { candidate, body, mentions, posted: false };
 
+    // Monday appends the mentions to the update; show them in the preview so the
+    // dry-run reflects what the posted comment will actually read.
+    const preview = mentionNames.length ? `${body} ${mentionNames.join(' ')}` : body;
     console.log(`  • [${candidate.boardName}] item ${candidate.itemId}`);
-    console.log(`    "${body}"`);
+    console.log(`    "${preview}"`);
 
     if (post) {
       try {
