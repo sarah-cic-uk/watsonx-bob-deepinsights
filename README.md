@@ -78,7 +78,7 @@ Job advert (job ad.txt)
 
 ## Current state
 
-The two hardest integration risks have been derisked with working proof-of-concept scripts:
+The full pipeline runs end to end. Component status:
 
 | Component | Status |
 |---|---|
