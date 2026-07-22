@@ -4,7 +4,7 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node test/test_skills_matcher.js && node test/test_interview_commenter.js && node test/test_tracking_writer.js",
     "scrape": "node scraper.js"
   },
   "repository": {

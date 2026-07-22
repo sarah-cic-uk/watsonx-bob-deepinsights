@@ -37,45 +37,58 @@ You paste in a job advert (or describe the open seat). The agent does the rest:
 ## Architecture
 
 ```
-Job advert (input)
+Job advert (job ad.txt)
        │
        ▼
-┌─────────────────────┐
-│  Monday board scraper│  ◄── 4 boards: TSC, FN, Looming Bench, Pipe
-│  (monday.js)        │       filters: location / band / clearance / comments
-└────────┬────────────┘
+┌──────────────────────┐
+│  Job ad parser        │  → role / band / level / location / skills criteria
+│  (job-parser.js)      │
+└────────┬─────────────┘
+         │  criteria
+         ▼
+┌──────────────────────┐
+│  Monday board scraper │  ◄── source boards (TSC, FN, Looming Bench, Pipe, …)
+│  (candidate-matcher   │       filters: role / band / level / location
+│   + monday.js)        │
+└────────┬─────────────┘
          │  candidate shortlist
          ▼
-┌─────────────────────┐
-│  Box CV scraper     │  ◄── IBM Box (ibm.ent.box.com)
-│  (box_scraper.js)   │       downloads PDFs, extracts text via pdf-parse
-└────────┬────────────┘
-         │  CV text
-         ▼
-┌─────────────────────┐
-│  Skills matcher     │       compares CV skills to job description
-└────────┬────────────┘
+┌──────────────────────┐
+│  Box CV + skills      │  ◄── IBM Box (ibm.ent.box.com)
+│  (box_scraper.js +    │       downloads PDFs, extracts text, scores skills
+│   cv-skills-matcher)  │
+└────────┬─────────────┘
          │  confirmed matches
          ▼
-┌─────────────────────┐
-│  Monday commenter   │       posts interview request on each candidate's card
-│                     │       adds candidates to your team tracking board
-└─────────────────────┘
+┌──────────────────────┐
+│  Monday commenter     │  posts interview request, tags people per board
+│  (interview-commenter)│
+└────────┬─────────────┘
+         │
+         ▼
+┌──────────────────────┐
+│  Tracking-board writer│  adds each match to your team tracking board
+│  (tracking-writer.js) │
+└──────────────────────┘
+
+  Orchestrated end to end by main.js — dry-run by default, --post to write.
 ```
 
 ---
 
 ## Current state
 
-The two hardest integration risks have been derisked with working proof-of-concept scripts:
+The full pipeline runs end to end. Component status:
 
 | Component | Status |
 |---|---|
 | Monday.com GraphQL client | Working — reads boards, items, comments |
+| Job ad parser | Working — `job-parser.js` turns a job ad into match criteria + skills |
 | Box CV scraper | Working — authenticates via IBM SSO, downloads PDFs, extracts text |
-| Skills matching | Not started |
-| Monday commenter | Not started |
-| End-to-end agent orchestration | Not started |
+| Skills matching | Working — `cv-skills-matcher.js` scores CVs against required skills |
+| Monday commenter | Working — `interview-commenter.js` drafts/posts interview requests with real @mentions, tagging people per board (dry-run by default) |
+| Tracking-board writer | Working — `tracking-writer.js` adds each match to the tracking board with a summary note (dry-run by default) |
+| End-to-end agent orchestration | Working — `main.js` runs the full pipeline (parse → find → CV/skills → comment → tracking board); dry-run by default, `--post` to write, `--skip-cv` to skip Box |
 
 See [Monday_scraper_prompt.md](Monday_scraper_prompt.md) and [box_scraper_prompt.md](box_scraper_prompt.md) for the proof-of-concept implementation details.
 
@@ -105,7 +118,7 @@ See [Monday_scraper_prompt.md](Monday_scraper_prompt.md) and [box_scraper_prompt
 ```
 
 Produced by: `findCandidates()` in `candidate-matcher.js`  
-Consumed by: `filterBySkills()` in `cv-skills-matcher.js`, and the Monday commenter
+Consumed by: `filterBySkills()` in `cv-skills-matcher.js`, the Monday commenter (`interview-commenter.js`), and the tracking-board writer (`tracking-writer.js`)
 
 ---
 
@@ -145,9 +158,48 @@ node monday.js
 | **Pipe** | Pipeline — candidates in process |
 
 
-## Commands 
+## Configuration
 
-To run the full thing: 
- ``` node cv-skills-matcher.js 'job ad.txt' ```
+All board and tagging config lives in [`boards.config.js`](boards.config.js):
 
+| Key | What it does |
+|---|---|
+| `sourceBoardIds` | Array of Monday board IDs to scan for candidates. Add as many as you like. |
+| `trackingBoardId` | Board that confirmed matches are written to. |
+| `businessUnit` | Single word that leads every comment (e.g. `"MTech interested to interview …"`). Change it so another team can reuse the bot. |
+| `tagUsersByBoard` | Per-board map of who to @mention on that board's cards — unlimited people per board. Use Monday **user IDs or emails** (plain names only resolve reliably on small accounts). |
+| `defaultTagUsers` | Fallback taggers for any board not listed in `tagUsersByBoard`. |
+
+
+## Commands
+
+**Run the whole pipeline** (dry-run — previews everything, writes nothing):
+
+```bash
+node main.js 'job ad.txt'
+```
+
+Post for real (comments + tracking board):
+
+```bash
+node main.js 'job ad.txt' --post
+```
+
+Skip the Box/CV step (preview without Box setup; skills NOT verified):
+
+```bash
+node main.js 'job ad.txt' --skip-cv
+```
+
+**Run or test individual stages:**
+
+```bash
+node monday.js                                    # verify Monday connection + list boards
+node job-parser.js 'job ad.txt'                   # inspect parsed criteria
+node candidate-matcher.js engineer 7 L2 London    # board matching only
+node cv-skills-matcher.js 'job ad.txt'            # board + Box CV + skills
+node interview-commenter.js 'job ad.txt' [--post] # commenting stage
 node box_scraper.js 'https://ibm.ent.box.com/file/2222222222'
+node seed-dummy-board.js --workspace=<id>         # create a dummy test board
+npm test                                          # run the test suites
+```

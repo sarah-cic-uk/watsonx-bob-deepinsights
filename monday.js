@@ -53,7 +53,8 @@ async function mondayQuery(query, variables = {}) {
     headers: {
       'Content-Type': 'application/json',
       Authorization: token,
-      'API-Version': '2024-10',
+      // 2024-10 was retired and predates mentions_list on create_update.
+      'API-Version': '2026-07',
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -171,17 +172,60 @@ async function getCandidateBoardItems() {
 }
 
 /**
- * Post a comment on a Monday item.
+ * Post a comment (update) on a Monday item.
+ *
  * @param {string} itemId  The item's ID.
- * @param {string} body    The comment text.
+ * @param {string} body    The comment text. Include readable "@Name" text for
+ *                         each mention so the update reads naturally; the actual
+ *                         notification is driven by `mentions`, not the body.
+ * @param {Array<{id: (string|number), type?: string}>} [mentions]
+ *   People/teams/boards to notify. Each entry defaults to type "User".
+ *   Monday triggers the real notification from this list, not from body markup.
+ * @returns {Promise<object>} The created update ({ id }).
  */
-async function addComment(itemId, body) {
+async function addComment(itemId, body, mentions = []) {
+  const mentionsList = (mentions || []).map(m => ({
+    id: Number(m.id),
+    type: m.type || 'User',
+  }));
+
   return mondayQuery(
-    `mutation ($itemId: ID!, $body: String!) {
-      create_update(item_id: $itemId, body: $body) { id }
+    `mutation ($itemId: ID!, $body: String!, $mentions: [UpdateMention]) {
+      create_update(item_id: $itemId, body: $body, mentions_list: $mentions) { id }
     }`,
-    { itemId: String(itemId), body }
+    { itemId: String(itemId), body, mentions: mentionsList.length ? mentionsList : null }
   );
+}
+
+/**
+ * Look up users (to resolve people -> user IDs for @mentions).
+ *
+ * With no filter this returns only the FIRST PAGE of the account's users — fine
+ * for small accounts, but in a large org (e.g. IBM) most people won't be in it.
+ * Prefer filtering by `ids` or `emails`, which resolve exact users regardless of
+ * account size.
+ *
+ * @param {object} [filter]
+ * @param {Array<string|number>} [filter.ids]     Exact Monday user IDs.
+ * @param {string[]}             [filter.emails]  Exact user emails.
+ * @returns {Promise<Array<{id: string, name: string, email: string}>>}
+ */
+async function listUsers(filter = {}) {
+  const { ids, emails } = filter;
+  const args = [];       // e.g. "ids: $ids"
+  const varDefs = [];    // e.g. "$ids: [ID!]"  — only declare what we use
+  const vars = {};
+  if (ids && ids.length)       { args.push('ids: $ids');       varDefs.push('$ids: [ID!]');        vars.ids = ids.map(Number); }
+  if (emails && emails.length) { args.push('emails: $emails'); varDefs.push('$emails: [String!]'); vars.emails = emails; }
+
+  const argStr = args.length ? `(${args.join(', ')})` : '';
+  const defStr = varDefs.length ? `(${varDefs.join(', ')})` : '';
+
+  const data = await mondayQuery(
+    `query ${defStr} { users${argStr} { id name email } }`,
+    vars
+  );
+  return data.users || [];
 }
 
 /**
@@ -214,6 +258,7 @@ module.exports = {
   getBoardItems,
   getCandidateBoardItems,
   addComment,
+  listUsers,
   addToTrackingBoard,
   API_URL,
 };
