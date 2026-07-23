@@ -22,7 +22,7 @@
 //
 // It never edits boards.config.js — it prints a paste-ready snippet at the end.
 
-const { mondayQuery, addComment } = require('./monday');
+const { mondayQuery, addComment } = require('../src/integrations/monday');
 
 const boardKind = process.argv.includes('--public') ? 'public' : 'private';
 const wsArg = process.argv.find((a) => a.startsWith('--workspace='));
@@ -158,7 +158,7 @@ async function main() {
   console.log(`  sourceBoardIds: ['${sourceBoardId}'],`);
   console.log(`  trackingBoardId: '${trackingBoardId}',\n`);
   console.log('Then preview the full pipeline (dry-run, no Box needed) with:');
-  console.log(`  node main.js 'examples/job-ad.txt' --skip-cv\n`);
+  console.log(`  node src/index.js 'examples/job-ad.txt' --skip-cv\n`);
   console.log('Reminders:');
   console.log('  • Set tagUsersByBoard in boards.config.js to real account users (yourself is fine).');
   console.log('  • For a full Box CV test, paste real Box CV URLs into the matching cards\'');

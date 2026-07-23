@@ -4,7 +4,7 @@
 // Step 1 of the pipeline: scan all source Monday boards and return candidates
 // that match the given job criteria. Each match includes the CV link for step 2.
 
-const { getCandidateBoardItems } = require('./monday');
+const { getCandidateBoardItems } = require('../integrations/monday');
 
 // ---------------------------------------------------------------------------
 // Column lookup helpers

@@ -6,7 +6,9 @@ const path = require('path');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 
-const DIR = __dirname;
+// Session, downloads and output files live at the repo root (two levels up from
+// src/integrations/), so they sit alongside .monday-token and stay gitignored.
+const DIR = path.join(__dirname, '..', '..');
 const SESSION_FILE = path.join(DIR, '.box_session.json');
 const DOWNLOAD_DIR = path.join(DIR, 'cv_downloads');
 const OUTPUT_CSV = path.join(DIR, 'cv_data.csv');

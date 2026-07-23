@@ -14,7 +14,7 @@
 const assert = require('node:assert/strict');
 
 // --- Stub monday.js network calls before the writer captures them ------------
-const monday = require('../monday');
+const monday = require('../src/integrations/monday');
 
 let trackingCalls = [];   // [itemName, columnValues]
 let commentCalls = [];    // [itemId, body, mentions]
@@ -30,7 +30,7 @@ monday.addComment = (...args) => {
   return { create_update: { id: 'upd_1' } };
 };
 
-const { addMatchesToTracking, buildSummary } = require('../tracking-writer');
+const { addMatchesToTracking, buildSummary } = require('../src/pipeline/track');
 
 // --- Tiny async test harness -------------------------------------------------
 let passed = 0;

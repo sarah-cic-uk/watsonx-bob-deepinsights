@@ -12,8 +12,8 @@
 // CLI) to actually write the comments. The dry-run output doubles as a "draft these
 // for me to send manually" fallback.
 
-const { addComment, listUsers } = require('./monday');
-const { businessUnit, tagUsersByBoard, defaultTagUsers } = require('./boards.config');
+const { addComment, listUsers } = require('../integrations/monday');
+const { businessUnit, tagUsersByBoard, defaultTagUsers } = require('../../boards.config');
 
 /**
  * The candidate object this module consumes — the frozen pipeline data contract.

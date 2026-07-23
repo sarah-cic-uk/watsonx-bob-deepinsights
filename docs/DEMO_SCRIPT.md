@@ -17,7 +17,7 @@
 - [ ] Terminal open in `watsonx-bob-deepinsights/`, font size bumped up so it's readable.
 - [ ] A **job ad** open on screen (`examples/job-ad.txt`) — the Senior Software Engineer / Band 7 / L2 / London one.
 - [ ] Monday.com open in a browser tab, on the **dummy source board** and the **tracking board** (so you can flip to them at the end).
-- [ ] Have the command ready to paste: `node main.js 'examples/job-ad.txt'`
+- [ ] Have the command ready to paste: `node src/index.js 'examples/job-ad.txt'`
 - [ ] Optional: a second tab pre-run with `--post` already executed, so the posted comment + tracking item are visible instantly when you switch (avoids waiting live).
 
 ---
@@ -51,7 +51,7 @@ And here's the part the challenge is really about: we didn't hand-code this the 
 > **[SCREEN: terminal — type/paste the command and run it]**
 
 ```bash
-node main.js 'examples/job-ad.txt'
+node src/index.js 'examples/job-ad.txt'
 ```
 
 **[A]** "One command, one job ad. And notice — it runs in **dry-run by default**, so it previews every action and writes nothing until we explicitly approve. Watch the five stages."
@@ -111,8 +111,8 @@ Next, we want DeepInsights to surface candidate availability automatically and s
 ## Cheat sheet — commands used on screen
 
 ```bash
-node main.js 'examples/job-ad.txt'          # the live demo — full pipeline, DRY-RUN (writes nothing)
-node main.js 'examples/job-ad.txt' --post   # the "go live" step — posts the comment + tracking item
+node src/index.js 'examples/job-ad.txt'          # the live demo — full pipeline, DRY-RUN (writes nothing)
+node src/index.js 'examples/job-ad.txt' --post   # the "go live" step — posts the comment + tracking item
 ```
 
 ## Talking-point reminders (if you go off-script)

@@ -7,8 +7,8 @@
 //
 // Usage: node inspect-boards.js
 
-const { mondayQuery } = require('./monday');
-const { sourceBoardIds } = require('./boards.config');
+const { mondayQuery } = require('../src/integrations/monday');
+const { sourceBoardIds } = require('../boards.config');
 
 (async () => {
   for (const boardId of sourceBoardIds) {

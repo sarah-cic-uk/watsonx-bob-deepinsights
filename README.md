@@ -41,37 +41,32 @@ Job advert (examples/job-ad.txt)
        │
        ▼
 ┌──────────────────────┐
-│  Job ad parser        │  → role / band / level / location / skills criteria
-│  (job-parser.js)      │
+│  Job ad parser        │  src/pipeline/parse.js — role / band / level / location / skills
 └────────┬─────────────┘
          │  criteria
          ▼
 ┌──────────────────────┐
-│  Monday board scraper │  ◄── source boards (TSC, FN, Looming Bench, Pipe, …)
-│  (candidate-matcher   │       filters: role / band / level / location
-│   + monday.js)        │
+│  Monday board scraper │  src/pipeline/find.js (+ integrations/monday.js)
+│                       │  ◄── source boards (TSC, FN, …); filters role/band/level/location
 └────────┬─────────────┘
          │  candidate shortlist
          ▼
 ┌──────────────────────┐
-│  Box CV + skills      │  ◄── IBM Box (ibm.ent.box.com)
-│  (box_scraper.js +    │       downloads PDFs, extracts text, scores skills
-│   cv-skills-matcher)  │
+│  Box CV + skills      │  src/pipeline/skills.js (+ integrations/box.js)
+│                       │  ◄── IBM Box: downloads PDFs, extracts text, scores skills
 └────────┬─────────────┘
          │  confirmed matches
          ▼
 ┌──────────────────────┐
-│  Monday commenter     │  posts interview request, tags people per board
-│  (interview-commenter)│
+│  Monday commenter     │  src/pipeline/comment.js — interview request, tags per board
 └────────┬─────────────┘
          │
          ▼
 ┌──────────────────────┐
-│  Tracking-board writer│  adds each match to your team tracking board
-│  (tracking-writer.js) │
+│  Tracking-board writer│  src/pipeline/track.js — logs each match to your board
 └──────────────────────┘
 
-  Orchestrated end to end by main.js — dry-run by default, --post to write.
+  Orchestrated end to end by src/index.js — dry-run by default, --post to write.
 ```
 
 ---
@@ -83,12 +78,12 @@ The full pipeline runs end to end. Component status:
 | Component | Status |
 |---|---|
 | Monday.com GraphQL client | Working — reads boards, items, comments |
-| Job ad parser | Working — `job-parser.js` turns a job ad into match criteria + skills |
+| Job ad parser | Working — `src/pipeline/parse.js` turns a job ad into match criteria + skills |
 | Box CV scraper | Working — authenticates via IBM SSO, downloads PDFs, extracts text |
-| Skills matching | Working — `cv-skills-matcher.js` scores CVs against required skills |
-| Monday commenter | Working — `interview-commenter.js` drafts/posts interview requests with real @mentions, tagging people per board (dry-run by default) |
-| Tracking-board writer | Working — `tracking-writer.js` adds each match to the tracking board with a summary note (dry-run by default) |
-| End-to-end agent orchestration | Working — `main.js` runs the full pipeline (parse → find → CV/skills → comment → tracking board); dry-run by default, `--post` to write, `--skip-cv` to skip Box |
+| Skills matching | Working — `src/pipeline/skills.js` scores CVs against required skills |
+| Monday commenter | Working — `src/pipeline/comment.js` drafts/posts interview requests with real @mentions, tagging people per board (dry-run by default) |
+| Tracking-board writer | Working — `src/pipeline/track.js` adds each match to the tracking board with a summary note (dry-run by default) |
+| End-to-end agent orchestration | Working — `src/index.js` runs the full pipeline (parse → find → CV/skills → comment → tracking board); dry-run by default, `--post` to write, `--skip-cv` to skip Box |
 
 See [Monday_scraper_prompt.md](docs/prompts/Monday_scraper_prompt.md) and [box_scraper_prompt.md](docs/prompts/box_scraper_prompt.md) for the proof-of-concept implementation details.
 
@@ -117,8 +112,8 @@ See [Monday_scraper_prompt.md](docs/prompts/Monday_scraper_prompt.md) and [box_s
 }
 ```
 
-Produced by: `findCandidates()` in `candidate-matcher.js`  
-Consumed by: `filterBySkills()` in `cv-skills-matcher.js`, the Monday commenter (`interview-commenter.js`), and the tracking-board writer (`tracking-writer.js`)
+Produced by: `findCandidates()` in `src/pipeline/find.js`  
+Consumed by: `filterBySkills()` in `src/pipeline/skills.js`, the Monday commenter (`src/pipeline/comment.js`), and the tracking-board writer (`src/pipeline/track.js`)
 
 ---
 
@@ -140,7 +135,7 @@ Consumed by: `filterBySkills()` in `cv-skills-matcher.js`, the Monday commenter 
 
 ```bash
 # Test Monday connection
-node monday.js
+node src/integrations/monday.js
 
 # Test Box scraper (requires Playwright MCP)
 # See docs/prompts/box_scraper_prompt.md for full setup
@@ -175,7 +170,7 @@ All board and tagging config lives in [`boards.config.js`](boards.config.js):
 of the above (and your Monday token, which it verifies live):
 
 ```bash
-npm run setup     # or: node setup.js
+npm run setup     # or: node scripts/setup.js
 ```
 
 
@@ -184,28 +179,28 @@ npm run setup     # or: node setup.js
 **Run the whole pipeline** (dry-run — previews everything, writes nothing):
 
 ```bash
-node main.js 'examples/job-ad.txt'
+node src/index.js 'examples/job-ad.txt'
 ```
 
 Post for real (comments + tracking board):
 
 ```bash
-node main.js 'examples/job-ad.txt' --post
+node src/index.js 'examples/job-ad.txt' --post
 ```
 
 Skip the Box/CV step (preview without Box setup; skills NOT verified):
 
 ```bash
-node main.js 'examples/job-ad.txt' --skip-cv
+node src/index.js 'examples/job-ad.txt' --skip-cv
 ```
 
 **Run or test individual stages:**
 
 ```bash
-node monday.js                                    # verify Monday connection + list boards
-node job-parser.js 'examples/job-ad.txt'                   # inspect parsed criteria
-node candidate-matcher.js engineer 7 L2 London    # board matching only (no Box)
-node box_scraper.js 'https://ibm.ent.box.com/file/2222222222'  # test a single CV fetch
-node seed-dummy-board.js --workspace=<id>         # create a dummy test board
+node src/integrations/monday.js                                    # verify Monday connection + list boards
+node src/pipeline/parse.js 'examples/job-ad.txt'                   # inspect parsed criteria
+node src/pipeline/find.js engineer 7 L2 London    # board matching only (no Box)
+node src/integrations/box.js 'https://ibm.ent.box.com/file/2222222222'  # test a single CV fetch
+node scripts/seed-dummy-board.js --workspace=<id>         # create a dummy test board
 npm test                                          # run the test suites
 ```

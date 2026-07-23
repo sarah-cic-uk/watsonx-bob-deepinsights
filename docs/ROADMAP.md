@@ -45,7 +45,7 @@ Don't do this with an LLM (waste of money), can do it with JS and throw and erro
 #### 1.3. Continue the program as normal, just with the more flexible input 
 
 ### 2. Skills Matching
-Currently, `cv-skills-matcher.js` matches skills with a hand-written alias map + word-boundary regex, then scores `matched / required`. It works but is brittle: the alias map can never be complete (e.g. "Amazon Web Services" ≠ `aws`), it has no semantic understanding ("built REST microservices" won't match `api design`), and it's a blind present/absent check. An LLM can read the CV like a human reviewer and judge genuine fit - same pattern as the job-ad parsing above.
+Currently, `src/pipeline/skills.js` matches skills with a hand-written alias map + word-boundary regex, then scores `matched / required`. It works but is brittle: the alias map can never be complete (e.g. "Amazon Web Services" ≠ `aws`), it has no semantic understanding ("built REST microservices" won't match `api design`), and it's a blind present/absent check. An LLM can read the CV like a human reviewer and judge genuine fit - same pattern as the job-ad parsing above.
 
 #### 2.1. Send the CV text + required skills to an LLM via a RESTful request
 Example prompt to try:
@@ -63,7 +63,7 @@ Screen this CV against the required skills. For each skill decide if the CV genu
 
 Required Skills
 ---------------
-<INSERT-REQUIRED-SKILLS-AT-RUNTIME> # Generated from `job-parser.js`
+<INSERT-REQUIRED-SKILLS-AT-RUNTIME> # Generated from `src/pipeline/parse.js`
 
 CV Text
 ---------------

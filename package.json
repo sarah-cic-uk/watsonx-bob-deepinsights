@@ -2,10 +2,10 @@
   "name": "watsonx-bob-deepinsights",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "src/index.js",
   "scripts": {
-    "setup": "node setup.js",
-    "start": "node main.js",
+    "setup": "node scripts/setup.js",
+    "start": "node src/index.js",
     "test": "node test/test_skills_matcher.js && node test/test_interview_commenter.js && node test/test_tracking_writer.js"
   },
   "repository": {

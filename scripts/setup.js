@@ -144,7 +144,7 @@ ${tagLines}
 // --- Live token check (uses monday.js, which reads MONDAY_API_TOKEN first) ---
 async function verifyToken(token) {
   process.env.MONDAY_API_TOKEN = token;
-  const { mondayQuery } = require('./monday');
+  const { mondayQuery } = require('../src/integrations/monday');
   const data = await mondayQuery('query { me { name email account { name } } }');
   return data.me;
 }
@@ -157,7 +157,7 @@ async function main() {
   rl.on('line', onLine);
   rl.on('close', () => { closed = true; while (waiters.length) waiters.shift()(''); });
   console.log('\nDeepInsights — setup\n====================');
-  console.log('This will create boards.config.js and .monday-token in this folder.\n');
+  console.log('This will create boards.config.js and .monday-token in the project root.\n');
 
   // 1. Business unit
   const businessUnit = await askNonEmpty('Business unit name (leads every comment, e.g. MTech): ');
@@ -210,9 +210,10 @@ async function main() {
     }
   }
 
-  // 7. Confirm before overwriting existing files
+  // 7. Confirm before overwriting existing files (written to the repo root, one level up)
+  const root = path.join(__dirname, '..');
   const targets = ['boards.config.js', '.monday-token'];
-  const existing = targets.filter((f) => fs.existsSync(path.join(__dirname, f)));
+  const existing = targets.filter((f) => fs.existsSync(path.join(root, f)));
   if (existing.length) {
     console.log(`\n⚠ These file(s) already exist and will be overwritten: ${existing.join(', ')}`);
     const ok = await ask('  Overwrite? (y/N): ');
@@ -232,8 +233,8 @@ async function main() {
     trackingBoardId,
     skillThreshold,
   });
-  fs.writeFileSync(path.join(__dirname, 'boards.config.js'), configText);
-  fs.writeFileSync(path.join(__dirname, '.monday-token'), token + '\n');
+  fs.writeFileSync(path.join(root, 'boards.config.js'), configText);
+  fs.writeFileSync(path.join(root, '.monday-token'), token + '\n');
 
   console.log('\n✓ Wrote boards.config.js and .monday-token');
   console.log('\nSetup summary:');
@@ -242,8 +243,8 @@ async function main() {
   console.log(`  Tracking board: ${trackingBoardId}`);
   console.log(`  Threshold     : ${skillThreshold} (${Math.round(skillThreshold * 100)}%)`);
   console.log('\nNext: preview a run with');
-  console.log("  node main.js 'examples/job-ad.txt'        (dry-run — writes nothing)");
-  console.log("  node main.js 'examples/job-ad.txt' --post (posts comments + logs matches)");
+  console.log("  node src/index.js 'examples/job-ad.txt'        (dry-run — writes nothing)");
+  console.log("  node src/index.js 'examples/job-ad.txt' --post (posts comments + logs matches)");
 
   rl.close();
 }

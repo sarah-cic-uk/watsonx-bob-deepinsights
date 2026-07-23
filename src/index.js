@@ -16,11 +16,11 @@
 //   node main.js 'examples/job-ad.txt' --post     # posts comments + adds matches to tracking board
 //   node main.js 'examples/job-ad.txt' --skip-cv  # preview without the Box/CV step (skills NOT verified)
 
-const { parseJobAd }            = require('./job-parser');
-const { findCandidates }        = require('./candidate-matcher');
-const { postInterviewRequests } = require('./interview-commenter');
-const { addMatchesToTracking }  = require('./tracking-writer');
-const { skillThreshold }        = require('./boards.config');
+const { parseJobAd }            = require('./pipeline/parse');
+const { findCandidates }        = require('./pipeline/find');
+const { postInterviewRequests } = require('./pipeline/comment');
+const { addMatchesToTracking }  = require('./pipeline/track');
+const { skillThreshold }        = require('../boards.config');
 // NOTE: cv-skills-matcher is required lazily inside runPipeline (only when the CV
 // step actually runs). It pulls in box_scraper → playwright, so requiring it up
 // front would make --skip-cv fail on machines without those Box deps installed.
@@ -72,7 +72,7 @@ async function runPipeline(jobAdPath, opts = {}) {
     console.log('  ⚠ --skip-cv: skipping the Box/CV step. Skills are NOT verified —');
     console.log('    treating all board matches as the shortlist.');
   } else {
-    const { filterBySkills } = require('./cv-skills-matcher'); // lazy — pulls in Box/playwright
+    const { filterBySkills } = require('./pipeline/skills'); // lazy — pulls in Box/playwright
     shortlist = await filterBySkills(candidates, criteria.skills, { threshold: skillThreshold });
     const pct = Math.round((skillThreshold ?? 0.7) * 100);
     console.log(`→ ${shortlist.length} candidate(s) passed the skills check (threshold ${pct}%).`);

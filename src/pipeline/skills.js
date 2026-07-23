@@ -136,7 +136,7 @@ async function filterBySkills(candidates, requiredSkills, opts = {}) {
 
     const total = withLinks.length;
     console.log(`Downloading CVs for ${total} candidate(s)...\n`);
-    const {createScraperSession} = require('./box_scraper'); // lazy — pulls in playwright
+    const {createScraperSession} = require('../integrations/box'); // lazy — pulls in playwright
     const session = await createScraperSession();
     const shortlist = [];
 
