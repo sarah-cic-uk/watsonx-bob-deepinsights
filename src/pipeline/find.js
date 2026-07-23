@@ -134,6 +134,7 @@ async function findCandidates(criteria) {
           boardId,
           boardName,
           itemId:   item.id,
+          itemUrl:  item.url,       // deep link to the Monday card
           name:     item.name,
           role:     roleText,
           band:     bandText,

@@ -193,7 +193,7 @@ async function postInterviewRequests(shortlist, opts = {}) {
   const results = [];
   for (const candidate of shortlist) {
     const resolved = await resolveForBoard(candidate.boardId);
-    const { body, mentions, mentionNames } = buildComment(candidate, resolved, { role: opts.role });
+    const { body, mentions, mentionNames } = buildComment(candidate, resolved, { role: opts.role, businessUnit: opts.businessUnit });
     const result = { candidate, body, mentions, posted: false };
 
     // Monday appends the mentions to the update; show them in the preview so the

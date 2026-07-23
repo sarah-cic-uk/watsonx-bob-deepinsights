@@ -124,6 +124,7 @@ async function getBoardItems(boardId) {
             items {
               id
               name
+              url
               column_values { id text value }
               updates(limit: 10) {
                 id

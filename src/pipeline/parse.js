@@ -52,7 +52,18 @@ const ROLE_STOP_WORDS = new Set([
  * }}
  */
 function parseJobAd(filePath) {
-  const text = fs.readFileSync(filePath, 'utf8');
+  return parseJobAdText(fs.readFileSync(filePath, 'utf8'));
+}
+
+/**
+ * Parse job ad text (already loaded) into structured criteria.
+ * Same contract as parseJobAd, but takes the raw text directly — used by the
+ * web UI, which receives pasted text rather than a file path.
+ *
+ * @param {string} text  The job ad body.
+ * @returns {{roleKeywords:string[], bands:string[], levels:string[], locations:string[], skills:string[], raw:object}}
+ */
+function parseJobAdText(text) {
   const raw = {};
 
   for (const line of text.split('\n')) {
@@ -100,7 +111,7 @@ function parseJobAd(filePath) {
   return { roleKeywords, bands, levels, locations, skills, raw };
 }
 
-module.exports = { parseJobAd };
+module.exports = { parseJobAd, parseJobAdText };
 
 // Quick smoke-test: node src/pipeline/parse.js [path-to-job-ad]
 if (require.main === module) {
