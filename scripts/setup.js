@@ -72,8 +72,10 @@ async function askInt(query, { min = 1 } = {}) {
 async function askBoardId(query) {
   for (;;) {
     const v = await ask(query);
-    if (/^\d+$/.test(v)) return v;
-    console.log('  ✗ A Monday board ID is all digits (from the board URL .../boards/{id}).');
+    if (/^\d+$/.test(v)) return v;            // bare numeric ID
+    const url = v.match(/boards\/(\d+)/);     // pasted Monday board URL
+    if (url) return url[1];
+    console.log('  ✗ Enter just the board ID — all digits, e.g. 18423031147 (or paste the board URL). No names/emails here.');
   }
 }
 
@@ -166,11 +168,11 @@ async function main() {
   const n = await askInt('\nHow many source boards do you want to scan? ', { min: 1 });
   const sourceBoardIds = [];
   const tagUsersByBoard = {};
-  console.log(`\nFor each board, enter its ID then who to tag (${TAGGER_HINT}).`);
+  console.log('\nFor each board you\'ll be asked two things in turn: first the board ID, then who to tag.');
   for (let i = 1; i <= n; i++) {
-    const id = await askBoardId(`\n  Board ${i}/${n} — board ID: `);
+    const id = await askBoardId(`\n  Board ${i}/${n} — Monday board ID (digits only, e.g. 18423031147): `);
     sourceBoardIds.push(id);
-    const raw = await ask(`  Board ${i}/${n} — people to tag (${TAGGER_HINT}; blank for none): `);
+    const raw = await ask(`  Board ${i}/${n} — now, who to tag on this board (${TAGGER_HINT}; blank for none): `);
     const taggers = parseTaggers(raw);
     if (taggers.length) tagUsersByBoard[id] = taggers;
   }
