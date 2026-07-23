@@ -1,6 +1,6 @@
 'use strict';
 
-// candidate-matcher.js
+// src/pipeline/find.js
 // Step 1 of the pipeline: scan all source Monday boards and return candidates
 // that match the given job criteria. Each match includes the CV link for step 2.
 
@@ -155,8 +155,8 @@ async function findCandidates(criteria) {
 module.exports = { findCandidates };
 
 // When run directly: quick smoke-test with broad criteria so you can see what comes back.
-// Usage: node candidate-matcher.js [roleKeyword] [band] [level] [location]
-// Example: node candidate-matcher.js engineer 7 L2 London
+// Usage: node src/pipeline/find.js [roleKeyword] [band] [level] [location]
+// Example: node src/pipeline/find.js engineer 7 L2 London
 if (require.main === module) {
   const [, , roleKw = 'engineer', band = '7', level = 'L2', location = 'London'] = process.argv;
   const criteria = {

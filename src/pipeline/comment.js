@@ -1,6 +1,6 @@
 'use strict';
 
-// interview-commenter.js
+// src/pipeline/comment.js
 // Step 3 of the pipeline: for each shortlisted candidate, post an interview-request
 // comment on their Monday card, tagging the configured people so they get notified.
 //

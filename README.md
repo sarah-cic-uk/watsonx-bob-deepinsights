@@ -176,6 +176,14 @@ npm run setup     # or: node scripts/setup.js
 
 ## Commands
 
+**Check your setup** (read-only — makes no changes; reviews errors from previous
+runs in `error.log` (permission issues first), then verifies config, token, board
+access + matcher columns, tag users, and Box readiness):
+
+```bash
+npm run doctor     # or: node scripts/doctor.js
+```
+
 **Run the whole pipeline** (dry-run — previews everything, writes nothing):
 
 ```bash

@@ -7,7 +7,7 @@
 //                         tracking board, and the skill-match threshold
 //   • .monday-token     — the Monday API token (gitignored)
 //
-// Run:  node setup.js   (or: npm run setup)
+// Run:  node scripts/setup.js   (or: npm run setup)
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -143,7 +143,7 @@ ${tagLines}
 `;
 }
 
-// --- Live token check (uses monday.js, which reads MONDAY_API_TOKEN first) ---
+// --- Live token check (uses the Monday client (src/integrations/monday.js), which reads MONDAY_API_TOKEN first) ---
 async function verifyToken(token) {
   process.env.MONDAY_API_TOKEN = token;
   const { mondayQuery } = require('../src/integrations/monday');

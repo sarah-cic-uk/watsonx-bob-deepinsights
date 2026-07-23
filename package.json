@@ -4,7 +4,8 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "setup": "node scripts/setup.js",
+    "setup": "node scripts/setup.js && node scripts/doctor.js",
+    "doctor": "node scripts/doctor.js",
     "start": "node src/index.js",
     "test": "node test/test_skills_matcher.js && node test/test_interview_commenter.js && node test/test_tracking_writer.js"
   },

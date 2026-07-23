@@ -2,9 +2,9 @@
 
 // seed-dummy-board.js
 // Creates a representative DUMMY source board + tracking board in Monday so you
-// can test the pipeline (and especially interview-commenter.js) end-to-end.
+// can test the pipeline (and especially src/pipeline/comment.js) end-to-end.
 //
-// It builds columns whose titles match the keyword rules in candidate-matcher.js
+// It builds columns whose titles match the keyword rules in src/pipeline/find.js
 // (role / band / level / location / cv), seeds seven candidates tuned to the
 // existing "examples/job-ad.txt" (Senior Software Engineer / Band 7 / L2 / London), and
 // posts the scenario comments (already-claimed, travel restriction).
@@ -13,9 +13,9 @@
 // used everywhere else).
 //
 // Usage:
-//   node seed-dummy-board.js                     # boards in the default workspace
-//   node seed-dummy-board.js --workspace=16618647 # into a specific workspace
-//   node seed-dummy-board.js --public            # public (else private)
+//   node scripts/seed-dummy-board.js                     # boards in the default workspace
+//   node scripts/seed-dummy-board.js --workspace=16618647 # into a specific workspace
+//   node scripts/seed-dummy-board.js --public            # public (else private)
 //
 // Enterprise accounts often forbid creating boards in the main workspace; pass
 // --workspace=<id> for one you own (e.g. a "dummy" workspace).
@@ -29,7 +29,7 @@ const wsArg = process.argv.find((a) => a.startsWith('--workspace='));
 const workspaceId = wsArg ? wsArg.split('=')[1] : null;
 
 // Columns to create. `key` is our internal handle; `title` is what Monday shows
-// (and what candidate-matcher.js keyword-matches on). All plain text so the
+// (and what src/pipeline/find.js keyword-matches on). All plain text so the
 // matcher reads the value back verbatim.
 const COLUMNS = [
   { key: 'role',     title: 'Role' },

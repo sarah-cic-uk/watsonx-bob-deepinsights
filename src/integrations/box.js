@@ -14,10 +14,10 @@ const DOWNLOAD_DIR = path.join(DIR, 'cv_downloads');
 const OUTPUT_CSV = path.join(DIR, 'cv_data.csv');
 const OUTPUT_XLSX = path.join(DIR, 'cv_data.xlsx');
 
-// Parse args: node box_scraper.js [--folder] <url>
+// Parse args: node src/integrations/box.js [--folder] <url>
 // Accepts a /folder/ URL (lists all PDFs) or a /file/ URL (processes that single file).
 // Always quote the URL — the ?s= shared-link token contains ? which zsh treats as a glob wildcard.
-//   node box_scraper.js 'https://ibm.ent.box.com/file/123?s=abc'
+//   node src/integrations/box.js 'https://ibm.ent.box.com/file/123?s=abc'
 
 // --- Session / browser setup ---
 // IBM Box SSO uses the same w3id identity provider as w3.ibm.com.
@@ -245,7 +245,7 @@ function fileEntryFromUrl(url) {
 }
 
 // ---------------------------------------------------------------------------
-// Programmatic API — used by cv-skills-matcher.js
+// Programmatic API — used by src/pipeline/skills.js
 // ---------------------------------------------------------------------------
 
 /**
@@ -296,7 +296,7 @@ async function createScraperSession() {
 module.exports = { createScraperSession };
 
 // ---------------------------------------------------------------------------
-// CLI — node box_scraper.js '<url>'
+// CLI — node src/integrations/box.js '<url>'
 // ---------------------------------------------------------------------------
 
 if (require.main === module) {
@@ -304,7 +304,7 @@ if (require.main === module) {
     const args = process.argv.slice(2);
     const inputUrl = args[0] === '--folder' ? args[1] : args[0];
     if (!inputUrl) {
-      console.error('Usage: node box_scraper.js \'<box_folder_or_file_url>\'');
+      console.error('Usage: node src/integrations/box.js \'<box_folder_or_file_url>\'');
       process.exit(1);
     }
     const isSingleFile = new URL(inputUrl).pathname.startsWith('/file/');

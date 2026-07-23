@@ -1,12 +1,14 @@
 'use strict';
 
-// cv-skills-matcher.js
+// src/pipeline/skills.js
 // Step 2 of the pipeline: for each candidate from candidate-matcher, download
 // their CV from Box, check it against the required skills, and return only
 // those who match. Candidates without a CV link are skipped with a warning.
 
 // box_scraper (→ playwright) is required lazily inside filterBySkills so that
 // importing this module for its pure scoreSkills() doesn't pull in heavy Box deps.
+
+const { logError } = require('../lib/log');
 
 // Minimum fraction of required skills that must appear in the CV (0.0 – 1.0).
 // 1.0 = all skills required. Lower to allow partial matches.
@@ -109,7 +111,7 @@ function scoreSkills(cvText, requiredSkills) {
 /**
  * Download CVs for each candidate and filter by required skills.
  *
- * @param {Array}    candidates      Output of findCandidates() from candidate-matcher.js
+ * @param {Array}    candidates      Output of findCandidates() from src/pipeline/find.js
  * @param {string[]} requiredSkills  Skills list from parseJobAd()
  * @param {object}   [opts]
  * @param {number}   [opts.threshold=1.0]  Minimum fraction of skills required (0.0–1.0)
@@ -169,6 +171,7 @@ async function filterBySkills(candidates, requiredSkills, opts = {}) {
                 }
             } catch (err) {
                 console.log(`ERROR — ${err.message}`);
+                logError(`skills CV=${candidate.name}`, err);
             }
         }
     } finally {

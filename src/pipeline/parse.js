@@ -1,6 +1,6 @@
 'use strict';
 
-// job-parser.js
+// src/pipeline/parse.js
 // Parses a structured job ad text file into criteria for candidate-matcher
 // and skills for cv-skills-matcher.
 //
@@ -102,7 +102,7 @@ function parseJobAd(filePath) {
 
 module.exports = { parseJobAd };
 
-// Quick smoke-test: node job-parser.js [path-to-job-ad]
+// Quick smoke-test: node src/pipeline/parse.js [path-to-job-ad]
 if (require.main === module) {
   const filePath = process.argv[2] || './examples/job-ad.txt';
   try {

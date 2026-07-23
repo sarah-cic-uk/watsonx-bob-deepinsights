@@ -299,6 +299,7 @@ nothing is broken before or after any changes.
 ## Quick reference — all test commands
 
 ```bash
+node scripts/doctor.js                                 # 0. read-only health check (config/token/boards/tags/Box)
 node src/integrations/monday.js                                 # 1. verify Monday connection
 node scripts/seed-dummy-board.js --workspace=<id>      # 2. create safe dummy boards
 node src/pipeline/parse.js 'examples/job-ad.txt'       # 3. inspect parsed criteria
