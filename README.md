@@ -37,7 +37,7 @@ You paste in a job advert (or describe the open seat). The agent does the rest:
 ## Architecture
 
 ```
-Job advert (job ad.txt)
+Job advert (examples/job-ad.txt)
        │
        ▼
 ┌──────────────────────┐
@@ -90,7 +90,7 @@ The full pipeline runs end to end. Component status:
 | Tracking-board writer | Working — `tracking-writer.js` adds each match to the tracking board with a summary note (dry-run by default) |
 | End-to-end agent orchestration | Working — `main.js` runs the full pipeline (parse → find → CV/skills → comment → tracking board); dry-run by default, `--post` to write, `--skip-cv` to skip Box |
 
-See [Monday_scraper_prompt.md](Monday_scraper_prompt.md) and [box_scraper_prompt.md](box_scraper_prompt.md) for the proof-of-concept implementation details.
+See [Monday_scraper_prompt.md](docs/prompts/Monday_scraper_prompt.md) and [box_scraper_prompt.md](docs/prompts/box_scraper_prompt.md) for the proof-of-concept implementation details.
 
 ---
 
@@ -143,7 +143,7 @@ Consumed by: `filterBySkills()` in `cv-skills-matcher.js`, the Monday commenter 
 node monday.js
 
 # Test Box scraper (requires Playwright MCP)
-# See box_scraper_prompt.md for full setup
+# See docs/prompts/box_scraper_prompt.md for full setup
 ```
 
 ---
@@ -169,6 +169,14 @@ All board and tagging config lives in [`boards.config.js`](boards.config.js):
 | `businessUnit` | Single word that leads every comment (e.g. `"MTech interested to interview …"`). Change it so another team can reuse the bot. |
 | `tagUsersByBoard` | Per-board map of who to @mention on that board's cards — unlimited people per board. Use Monday **user IDs or emails** (plain names only resolve reliably on small accounts). |
 | `defaultTagUsers` | Fallback taggers for any board not listed in `tagUsersByBoard`. |
+| `skillThreshold` | Minimum fraction (0.0–1.0) of the job's required skills a CV must contain to be shortlisted. e.g. `0.7` = at least 70%. |
+
+**New here?** Run the setup wizard instead of editing the file by hand — it captures all
+of the above (and your Monday token, which it verifies live):
+
+```bash
+npm run setup     # or: node setup.js
+```
 
 
 ## Commands
@@ -176,30 +184,28 @@ All board and tagging config lives in [`boards.config.js`](boards.config.js):
 **Run the whole pipeline** (dry-run — previews everything, writes nothing):
 
 ```bash
-node main.js 'job ad.txt'
+node main.js 'examples/job-ad.txt'
 ```
 
 Post for real (comments + tracking board):
 
 ```bash
-node main.js 'job ad.txt' --post
+node main.js 'examples/job-ad.txt' --post
 ```
 
 Skip the Box/CV step (preview without Box setup; skills NOT verified):
 
 ```bash
-node main.js 'job ad.txt' --skip-cv
+node main.js 'examples/job-ad.txt' --skip-cv
 ```
 
 **Run or test individual stages:**
 
 ```bash
 node monday.js                                    # verify Monday connection + list boards
-node job-parser.js 'job ad.txt'                   # inspect parsed criteria
-node candidate-matcher.js engineer 7 L2 London    # board matching only
-node cv-skills-matcher.js 'job ad.txt'            # board + Box CV + skills
-node interview-commenter.js 'job ad.txt' [--post] # commenting stage
-node box_scraper.js 'https://ibm.ent.box.com/file/2222222222'
+node job-parser.js 'examples/job-ad.txt'                   # inspect parsed criteria
+node candidate-matcher.js engineer 7 L2 London    # board matching only (no Box)
+node box_scraper.js 'https://ibm.ent.box.com/file/2222222222'  # test a single CV fetch
 node seed-dummy-board.js --workspace=<id>         # create a dummy test board
 npm test                                          # run the test suites
 ```

@@ -91,7 +91,7 @@ node seed-dummy-board.js
 - A **source board** ("DeepInsights — Source (dummy)") with 7 candidates
 - A **tracking board** ("DeepInsights — My Shortlist (dummy)")
 
-The 7 seeded candidates are tuned to the sample `job ad.txt` (Senior Software Engineer /
+The 7 seeded candidates are tuned to the sample `examples/job-ad.txt` (Senior Software Engineer /
 Band 7 / L2 / London). Their expected outcomes:
 
 | Candidate | Expected | Why |
@@ -135,13 +135,13 @@ repeatedly.
 ### 5a. Job ad parser
 
 ```bash
-node job-parser.js 'job ad.txt'
+node job-parser.js 'examples/job-ad.txt'
 ```
 
 **Expected:** prints parsed JSON — `roleKeywords`, `bands`, `levels` (note L2 expands to
 `["L2","L3"]`), `locations`, and `skills`.
 
-**Try tweaking** `job ad.txt` (change the band or add a skill) and re-run to see the
+**Try tweaking** `examples/job-ad.txt` (change the band or add a skill) and re-run to see the
 criteria change.
 
 ### 5b. Candidate matcher (board filtering only, no CVs)
@@ -159,15 +159,16 @@ match.
 
 ### 5c. Interview commenter (dry-run)
 
+The commenter no longer has its own CLI — it runs inside the pipeline. To preview just the
+comments without needing Box, run the pipeline with `--skip-cv`:
+
 ```bash
-node interview-commenter.js 'job ad.txt'
+node main.js 'examples/job-ad.txt' --skip-cv
 ```
 
-**Expected:** for each shortlisted candidate it prints the exact comment it *would* post,
+**Expected:** for each board match it prints the exact comment it *would* post,
 e.g. `MTech interested to interview Jane Doe for Senior Software Engineer @YourName`, plus
-which users would be tagged. It writes **nothing**. This stage runs the CV step first, so
-without CV links it will report candidates skipped at the skills step — that's expected
-(see §7 to add CVs).
+which users would be tagged. It writes **nothing**.
 
 ### 5d. Tracking-board writer
 
@@ -181,7 +182,7 @@ default and prints the item name + summary note it would create per candidate.
 This is the main end-to-end test. It runs all five stages in order.
 
 ```bash
-node main.js 'job ad.txt'
+node main.js 'examples/job-ad.txt'
 ```
 
 **Expected output — five clearly-labelled steps:**
@@ -200,7 +201,7 @@ If you haven't set up Box, skip the CV/skills stage so the pipeline runs on boar
 alone:
 
 ```bash
-node main.js 'job ad.txt' --skip-cv
+node main.js 'examples/job-ad.txt' --skip-cv
 ```
 
 **Expected:** step 3 prints a `⚠ --skip-cv` warning and treats all board matches as the
@@ -210,14 +211,16 @@ shortlist (skills **not** verified).
 
 ## 7. Test the CV / skills stage (requires Box)
 
-This stage downloads real CVs from IBM Box, so it needs Box access and Playwright.
+This stage downloads real CVs from IBM Box, so it needs Box access and Playwright. It runs
+as part of the full pipeline — it's exactly what `--skip-cv` turns off — so exercise it by
+running the pipeline **without** `--skip-cv`.
 
 **Prep:** in your dummy source board, paste real Box CV URLs into the **"CV Link"**
 column for the matching candidates (Jane / Ravi / Sam). Without a link, a candidate is
 skipped at this stage.
 
 ```bash
-node cv-skills-matcher.js 'job ad.txt'
+node main.js 'examples/job-ad.txt'
 ```
 
 **First run:** a browser window opens for IBM w3id login + 2FA. Complete it; the session
@@ -244,7 +247,7 @@ Once the dry-runs look correct, test that writes actually work. **This posts rea
 comments and creates real tracking items**, so do it against the **dummy** boards only.
 
 ```bash
-node main.js 'job ad.txt' --post
+node main.js 'examples/job-ad.txt' --post
 ```
 
 **Expected:**
@@ -296,14 +299,12 @@ nothing is broken before or after any changes.
 ## Quick reference — all test commands
 
 ```bash
-node monday.js                                    # 1. verify Monday connection
-node seed-dummy-board.js --workspace=<id>         # 2. create safe dummy boards
-node job-parser.js 'job ad.txt'                   # 3. inspect parsed criteria
-node candidate-matcher.js engineer 7 L2 London    # 4. board matching only
-node interview-commenter.js 'job ad.txt'          # 5. commenter (dry-run)
-node cv-skills-matcher.js 'job ad.txt'            # 6. CV + skills (needs Box)
-node main.js 'job ad.txt'                         # 7. full pipeline (dry-run)
-node main.js 'job ad.txt' --skip-cv               #    full pipeline, no Box
-node main.js 'job ad.txt' --post                  # 8. full pipeline, REAL writes
-npm test                                          # 9. automated unit tests
+node monday.js                                 # 1. verify Monday connection
+node seed-dummy-board.js --workspace=<id>      # 2. create safe dummy boards
+node job-parser.js 'examples/job-ad.txt'       # 3. inspect parsed criteria
+node candidate-matcher.js engineer 7 L2 London # 4. board matching only (no Box)
+node main.js 'examples/job-ad.txt' --skip-cv   # 5. full pipeline, no Box (preview comments + tracking)
+node main.js 'examples/job-ad.txt'             # 6. full pipeline incl. CV/skills (needs Box)
+node main.js 'examples/job-ad.txt' --post      # 7. full pipeline, REAL writes
+npm test                                       # 8. automated unit tests
 ```

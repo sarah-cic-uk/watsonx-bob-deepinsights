@@ -4,8 +4,9 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "test": "node test/test_skills_matcher.js && node test/test_interview_commenter.js && node test/test_tracking_writer.js",
-    "scrape": "node scraper.js"
+    "setup": "node setup.js",
+    "start": "node main.js",
+    "test": "node test/test_skills_matcher.js && node test/test_interview_commenter.js && node test/test_tracking_writer.js"
   },
   "repository": {
     "type": "git",

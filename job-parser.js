@@ -104,7 +104,7 @@ module.exports = { parseJobAd };
 
 // Quick smoke-test: node job-parser.js [path-to-job-ad]
 if (require.main === module) {
-  const filePath = process.argv[2] || './job ad.txt';
+  const filePath = process.argv[2] || './examples/job-ad.txt';
   try {
     const criteria = parseJobAd(filePath);
     console.log('Parsed job ad:');

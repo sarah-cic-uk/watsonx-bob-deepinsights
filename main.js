@@ -12,14 +12,15 @@
 // NOTHING (no comments, no tracking items) unless you pass --post.
 //
 // Usage:
-//   node main.js 'job ad.txt'            # full preview, writes nothing
-//   node main.js 'job ad.txt' --post     # posts comments + adds matches to tracking board
-//   node main.js 'job ad.txt' --skip-cv  # preview without the Box/CV step (skills NOT verified)
+//   node main.js 'examples/job-ad.txt'            # full preview, writes nothing
+//   node main.js 'examples/job-ad.txt' --post     # posts comments + adds matches to tracking board
+//   node main.js 'examples/job-ad.txt' --skip-cv  # preview without the Box/CV step (skills NOT verified)
 
 const { parseJobAd }            = require('./job-parser');
 const { findCandidates }        = require('./candidate-matcher');
 const { postInterviewRequests } = require('./interview-commenter');
 const { addMatchesToTracking }  = require('./tracking-writer');
+const { skillThreshold }        = require('./boards.config');
 // NOTE: cv-skills-matcher is required lazily inside runPipeline (only when the CV
 // step actually runs). It pulls in box_scraper → playwright, so requiring it up
 // front would make --skip-cv fail on machines without those Box deps installed.
@@ -72,8 +73,9 @@ async function runPipeline(jobAdPath, opts = {}) {
     console.log('    treating all board matches as the shortlist.');
   } else {
     const { filterBySkills } = require('./cv-skills-matcher'); // lazy — pulls in Box/playwright
-    shortlist = await filterBySkills(candidates, criteria.skills);
-    console.log(`→ ${shortlist.length} candidate(s) passed the skills check.`);
+    shortlist = await filterBySkills(candidates, criteria.skills, { threshold: skillThreshold });
+    const pct = Math.round((skillThreshold ?? 0.7) * 100);
+    console.log(`→ ${shortlist.length} candidate(s) passed the skills check (threshold ${pct}%).`);
   }
   if (!shortlist.length) {
     console.log('\nNo candidates passed the skills check. Done.');
@@ -113,7 +115,7 @@ if (require.main === module) {
   const argv = process.argv.slice(2);
   const post = argv.includes('--post');
   const skipCv = argv.includes('--skip-cv');
-  const jobAdPath = argv.find(a => !a.startsWith('--')) || './job ad.txt';
+  const jobAdPath = argv.find(a => !a.startsWith('--')) || './examples/job-ad.txt';
 
   runPipeline(jobAdPath, { post, skipCv }).catch(err => {
     console.error('\nFatal:', err.message);

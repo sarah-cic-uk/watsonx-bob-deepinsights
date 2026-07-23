@@ -6,7 +6,7 @@
 //
 // It builds columns whose titles match the keyword rules in candidate-matcher.js
 // (role / band / level / location / cv), seeds seven candidates tuned to the
-// existing "job ad.txt" (Senior Software Engineer / Band 7 / L2 / London), and
+// existing "examples/job-ad.txt" (Senior Software Engineer / Band 7 / L2 / London), and
 // posts the scenario comments (already-claimed, travel restriction).
 //
 // Requires a Monday token WITH WRITE ACCESS (same .monday-token / MONDAY_API_TOKEN
@@ -157,10 +157,10 @@ async function main() {
   console.log('Done. Paste these IDs into boards.config.js:\n');
   console.log(`  sourceBoardIds: ['${sourceBoardId}'],`);
   console.log(`  trackingBoardId: '${trackingBoardId}',\n`);
-  console.log('Then test the commenter (dry-run) with a matching card, e.g.:');
-  console.log(`  node interview-commenter.js 'job ad.txt'\n`);
+  console.log('Then preview the full pipeline (dry-run, no Box needed) with:');
+  console.log(`  node main.js 'examples/job-ad.txt' --skip-cv\n`);
   console.log('Reminders:');
-  console.log('  • Set tagUsers in boards.config.js to real account users (yourself is fine).');
+  console.log('  • Set tagUsersByBoard in boards.config.js to real account users (yourself is fine).');
   console.log('  • For a full Box CV test, paste real Box CV URLs into the matching cards\'');
   console.log('    "CV Link" column (Jane / Ravi / Sam) — otherwise they\'re skipped at the skills step.');
 }

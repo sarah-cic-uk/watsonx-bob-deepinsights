@@ -229,38 +229,3 @@ async function postInterviewRequests(shortlist, opts = {}) {
 
 module.exports = { postInterviewRequests, buildComment, resolveTagUsers };
 
-// ---------------------------------------------------------------------------
-// CLI: run the full pipeline end-to-end, then draft/post interview requests.
-//   node interview-commenter.js [path-to-job-ad] [--post]
-// Dry-run unless --post is passed.
-// ---------------------------------------------------------------------------
-if (require.main === module) {
-  const { parseJobAd }     = require('./job-parser');
-  const { findCandidates } = require('./candidate-matcher');
-  const { filterBySkills } = require('./cv-skills-matcher');
-
-  const argv = process.argv.slice(2);
-  const post = argv.includes('--post');
-  const jobAdPath = argv.find(a => !a.startsWith('--')) || './job ad.txt';
-
-  (async () => {
-    console.log(`Reading job ad: ${jobAdPath}\n`);
-    const criteria = parseJobAd(jobAdPath);
-    const role = criteria.raw?.role || '';
-
-    console.log('Step 1: Scanning Monday boards for candidates...');
-    const candidates = await findCandidates(criteria);
-    console.log(`  Found ${candidates.length} board match(es)\n`);
-    if (!candidates.length) { console.log('No candidates matched. Done.'); return; }
-
-    console.log('Step 2: Checking CVs against required skills...');
-    const shortlist = await filterBySkills(candidates, criteria.skills);
-    console.log(`  Shortlist: ${shortlist.length} candidate(s)`);
-
-    console.log('\nStep 3: Interview-request comments');
-    await postInterviewRequests(shortlist, { post, role });
-  })().catch(err => {
-    console.error('Fatal:', err.message);
-    process.exit(1);
-  });
-}

@@ -39,4 +39,11 @@ module.exports = {
   // Optional: users tagged on any board not listed in tagUsersByBoard above.
   // Leave as [] to tag nobody on unlisted boards.
   defaultTagUsers: [],
+
+  // --- Matching ---
+
+  // Minimum fraction of the job's required skills a candidate's CV must contain
+  // to be shortlisted (0.0–1.0). e.g. 0.7 = at least 70% of skills must appear.
+  // 1.0 requires every skill; lower it to allow partial matches.
+  skillThreshold: 0.7,
 };
