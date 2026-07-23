@@ -1,0 +1,35 @@
+ALEX JOHNSON
+Backend Engineer | Manchester
+
+PROFESSIONAL SUMMARY
+Backend specialist with 4 years experience building scalable APIs and data pipelines.
+Strong in Python and DevOps tooling. Some cloud experience.
+
+EXPERIENCE
+
+Backend Engineer — DataSystems Ltd (2022–present)
+- Developed Python microservices for data processing pipelines
+- Built REST APIs using Flask and FastAPI
+- Deployed applications to AWS EC2 and RDS
+- Used Docker for containerization and local development
+- Collaborated with frontend teams on API specifications
+
+Junior Backend Engineer — ConsultancyPro (2020–2022)
+- Wrote Python scripts for ETL jobs
+- Maintained legacy Java monolith (JCIP concurrency patterns)
+- Set up basic Docker containers for development
+- Basic SQL tuning and database maintenance
+
+SKILLS
+Languages: Python, Java, SQL, Bash
+Frameworks: Flask, FastAPI, Spring
+Databases: PostgreSQL, MySQL
+Containerization: Docker
+Cloud: AWS (EC2, RDS)
+Tools: Git, Linux, Apache, nginx
+
+CERTIFICATIONS
+Python Programming - Advanced (2021)
+
+EDUCATION
+BSc Software Engineering, University of Leeds (2020)

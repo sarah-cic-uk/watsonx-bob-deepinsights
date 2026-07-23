@@ -1,0 +1,28 @@
+{
+  "name": "watsonx-bob-deepinsights",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "node test/test_skills_matcher.js && node test/test_interview_commenter.js && node test/test_tracking_writer.js",
+    "scrape": "node scraper.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sarah-cic-uk/watsonx-bob-deepinsights.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/sarah-cic-uk/watsonx-bob-deepinsights/issues"
+  },
+  "homepage": "https://github.com/sarah-cic-uk/watsonx-bob-deepinsights#readme",
+  "dependencies": {
+    "mammoth": "^1.12.0",
+    "pdf-parse": "^1.1.4",
+    "playwright": "^1.61.1",
+    "xlsx": "^0.18.5"
+  }
+}

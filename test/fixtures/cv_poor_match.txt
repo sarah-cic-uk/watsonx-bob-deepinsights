@@ -1,0 +1,33 @@
+SAM PATEL
+QA Engineer | Bristol
+
+PROFESSIONAL SUMMARY
+Quality Assurance specialist with 3 years experience in test automation and manual testing.
+Strong attention to detail and experience with testing frameworks.
+
+EXPERIENCE
+
+QA Engineer — SoftwareTesting Inc (2022–present)
+- Wrote automated tests using Selenium and Cypress
+- Performed manual regression testing on web applications
+- Created test plans and documented test cases
+- Worked with Jenkins for CI/CD test automation
+- Collaborated with development teams on bug triage
+
+QA Automation Technician — TestingCorp (2021–2022)
+- Automated UI tests using Cypress
+- Maintained test automation suites
+- Reported and documented bugs in Azure DevOps
+- Participated in agile ceremonies (standups, retros)
+
+SKILLS
+Languages: Python (for test automation), Gherkin (BDD)
+Testing Frameworks: Selenium, Cypress, JUnit, pytest
+Methodologies: Test-Driven Development, Behavior-Driven Development
+Version Control: Git
+Platforms: Windows, Linux
+Tools: Azure DevOps, Jira, Postman
+
+EDUCATION
+Diploma in Software Testing, Tech Academy (2021)
+Bachelor of Arts, General Studies, Open University (2019)
