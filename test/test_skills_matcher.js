@@ -6,9 +6,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const {scoreSkills} = require('../cv-skills-matcher');
+const {scoreSkills} = require('../src/pipeline/skills');
 
-// Job requirements (from job ad.txt)
+// Job requirements (from examples/job-ad.txt)
 const requiredSkills = [
     'AWS',
     'javascript',

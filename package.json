@@ -2,10 +2,13 @@
   "name": "watsonx-bob-deepinsights",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "src/index.js",
   "scripts": {
-    "test": "node test/test_skills_matcher.js && node test/test_interview_commenter.js && node test/test_tracking_writer.js",
-    "scrape": "node scraper.js"
+    "setup": "node scripts/setup.js && node scripts/doctor.js",
+    "doctor": "node scripts/doctor.js",
+    "ui": "node src/ui/server.js",
+    "start": "node src/index.js",
+    "test": "node test/test_skills_matcher.js && node test/test_interview_commenter.js && node test/test_tracking_writer.js && node test/test_ui_server.js"
   },
   "repository": {
     "type": "git",

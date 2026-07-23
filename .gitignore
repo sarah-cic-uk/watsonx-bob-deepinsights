@@ -11,3 +11,4 @@ cv_downloads/
 .monday-token
 .claude
 *.xlsx
+error.log

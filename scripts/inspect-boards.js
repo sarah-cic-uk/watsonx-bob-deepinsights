@@ -3,12 +3,12 @@
 // inspect-boards.js
 // Diagnostic tool — shows every column name on each source board,
 // plus a sample item with its values, so you can verify the column
-// name matching in candidate-matcher.js is finding the right fields.
+// name matching in src/pipeline/find.js is finding the right fields.
 //
-// Usage: node inspect-boards.js
+// Usage: node scripts/inspect-boards.js
 
-const { mondayQuery } = require('./monday');
-const { sourceBoardIds } = require('./boards.config');
+const { mondayQuery } = require('../src/integrations/monday');
+const { sourceBoardIds } = require('../boards.config');
 
 (async () => {
   for (const boardId of sourceBoardIds) {

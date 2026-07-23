@@ -1,6 +1,6 @@
 'use strict';
 
-// main.js — DeepInsights recruiting pipeline, end to end.
+// src/index.js — DeepInsights recruiting pipeline, end to end.
 //
 // Ties the stages together into one command a recruiter actually runs:
 //
@@ -12,17 +12,19 @@
 // NOTHING (no comments, no tracking items) unless you pass --post.
 //
 // Usage:
-//   node main.js 'job ad.txt'            # full preview, writes nothing
-//   node main.js 'job ad.txt' --post     # posts comments + adds matches to tracking board
-//   node main.js 'job ad.txt' --skip-cv  # preview without the Box/CV step (skills NOT verified)
+//   node src/index.js 'examples/job-ad.txt'            # full preview, writes nothing
+//   node src/index.js 'examples/job-ad.txt' --post     # posts comments + adds matches to tracking board
+//   node src/index.js 'examples/job-ad.txt' --skip-cv  # preview without the Box/CV step (skills NOT verified)
 
-const { parseJobAd }            = require('./job-parser');
-const { findCandidates }        = require('./candidate-matcher');
-const { postInterviewRequests } = require('./interview-commenter');
-const { addMatchesToTracking }  = require('./tracking-writer');
-// NOTE: cv-skills-matcher is required lazily inside runPipeline (only when the CV
-// step actually runs). It pulls in box_scraper → playwright, so requiring it up
-// front would make --skip-cv fail on machines without those Box deps installed.
+const { parseJobAd }            = require('./pipeline/parse');
+const { findCandidates }        = require('./pipeline/find');
+const { postInterviewRequests } = require('./pipeline/comment');
+const { addMatchesToTracking }  = require('./pipeline/track');
+const { logError, ERROR_LOG }   = require('./lib/log');
+const { skillThreshold }        = require('../boards.config');
+// NOTE: pipeline/skills is required lazily inside runPipeline (only when the CV
+// step actually runs). It pulls in integrations/box → playwright, so requiring it
+// up front would make --skip-cv fail on machines without those Box deps installed.
 
 function hr(title) {
   console.log(`\n${'═'.repeat(60)}\n${title}\n${'═'.repeat(60)}`);
@@ -71,9 +73,10 @@ async function runPipeline(jobAdPath, opts = {}) {
     console.log('  ⚠ --skip-cv: skipping the Box/CV step. Skills are NOT verified —');
     console.log('    treating all board matches as the shortlist.');
   } else {
-    const { filterBySkills } = require('./cv-skills-matcher'); // lazy — pulls in Box/playwright
-    shortlist = await filterBySkills(candidates, criteria.skills);
-    console.log(`→ ${shortlist.length} candidate(s) passed the skills check.`);
+    const { filterBySkills } = require('./pipeline/skills'); // lazy — pulls in Box/playwright
+    shortlist = await filterBySkills(candidates, criteria.skills, { threshold: skillThreshold });
+    const pct = Math.round((skillThreshold ?? 0.7) * 100);
+    console.log(`→ ${shortlist.length} candidate(s) passed the skills check (threshold ${pct}%).`);
   }
   if (!shortlist.length) {
     console.log('\nNo candidates passed the skills check. Done.');
@@ -87,6 +90,13 @@ async function runPipeline(jobAdPath, opts = {}) {
   // Step 5 — add matches to the tracking board.
   hr('Step 5/5 · Add matches to the tracking board');
   const tracked = await addMatchesToTracking(shortlist, { post });
+
+  // Record any per-item write failures to the error log for later diagnosis.
+  const failures = [
+    ...comments.filter(c => c.error).map(c => [`comment board=${c.candidate.boardId} item=${c.candidate.itemId}`, c.error]),
+    ...tracked.filter(t => t.error).map(t => [`track "${t.itemName}"`, t.error]),
+  ];
+  for (const [ctx, err] of failures) logError(ctx, err);
 
   // Summary.
   hr('Summary');
@@ -102,6 +112,9 @@ async function runPipeline(jobAdPath, opts = {}) {
     console.log(`  Would track     : ${tracked.length}`);
     console.log('\n  DRY-RUN — nothing was written. Re-run with --post to publish.');
   }
+  if (failures.length) {
+    console.log(`\n  ⚠ ${failures.length} error(s) logged to error.log — run \`npm run doctor\` to review.`);
+  }
 
   return { criteria, candidates, shortlist, comments, tracked };
 }
@@ -113,10 +126,12 @@ if (require.main === module) {
   const argv = process.argv.slice(2);
   const post = argv.includes('--post');
   const skipCv = argv.includes('--skip-cv');
-  const jobAdPath = argv.find(a => !a.startsWith('--')) || './job ad.txt';
+  const jobAdPath = argv.find(a => !a.startsWith('--')) || './examples/job-ad.txt';
 
   runPipeline(jobAdPath, { post, skipCv }).catch(err => {
+    logError('pipeline (fatal)', err);
     console.error('\nFatal:', err.message);
+    console.error(`Logged to ${ERROR_LOG} — run \`npm run doctor\` to diagnose.`);
     process.exit(1);
   });
 }

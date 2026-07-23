@@ -1,6 +1,6 @@
 'use strict';
 
-// interview-commenter.js
+// src/pipeline/comment.js
 // Step 3 of the pipeline: for each shortlisted candidate, post an interview-request
 // comment on their Monday card, tagging the configured people so they get notified.
 //
@@ -12,8 +12,8 @@
 // CLI) to actually write the comments. The dry-run output doubles as a "draft these
 // for me to send manually" fallback.
 
-const { addComment, listUsers } = require('./monday');
-const { businessUnit, tagUsersByBoard, defaultTagUsers } = require('./boards.config');
+const { addComment, listUsers } = require('../integrations/monday');
+const { businessUnit, tagUsersByBoard, defaultTagUsers } = require('../../boards.config');
 
 /**
  * The candidate object this module consumes — the frozen pipeline data contract.
@@ -193,7 +193,7 @@ async function postInterviewRequests(shortlist, opts = {}) {
   const results = [];
   for (const candidate of shortlist) {
     const resolved = await resolveForBoard(candidate.boardId);
-    const { body, mentions, mentionNames } = buildComment(candidate, resolved, { role: opts.role });
+    const { body, mentions, mentionNames } = buildComment(candidate, resolved, { role: opts.role, businessUnit: opts.businessUnit });
     const result = { candidate, body, mentions, posted: false };
 
     // Monday appends the mentions to the update; show them in the preview so the
@@ -229,38 +229,3 @@ async function postInterviewRequests(shortlist, opts = {}) {
 
 module.exports = { postInterviewRequests, buildComment, resolveTagUsers };
 
-// ---------------------------------------------------------------------------
-// CLI: run the full pipeline end-to-end, then draft/post interview requests.
-//   node interview-commenter.js [path-to-job-ad] [--post]
-// Dry-run unless --post is passed.
-// ---------------------------------------------------------------------------
-if (require.main === module) {
-  const { parseJobAd }     = require('./job-parser');
-  const { findCandidates } = require('./candidate-matcher');
-  const { filterBySkills } = require('./cv-skills-matcher');
-
-  const argv = process.argv.slice(2);
-  const post = argv.includes('--post');
-  const jobAdPath = argv.find(a => !a.startsWith('--')) || './job ad.txt';
-
-  (async () => {
-    console.log(`Reading job ad: ${jobAdPath}\n`);
-    const criteria = parseJobAd(jobAdPath);
-    const role = criteria.raw?.role || '';
-
-    console.log('Step 1: Scanning Monday boards for candidates...');
-    const candidates = await findCandidates(criteria);
-    console.log(`  Found ${candidates.length} board match(es)\n`);
-    if (!candidates.length) { console.log('No candidates matched. Done.'); return; }
-
-    console.log('Step 2: Checking CVs against required skills...');
-    const shortlist = await filterBySkills(candidates, criteria.skills);
-    console.log(`  Shortlist: ${shortlist.length} candidate(s)`);
-
-    console.log('\nStep 3: Interview-request comments');
-    await postInterviewRequests(shortlist, { post, role });
-  })().catch(err => {
-    console.error('Fatal:', err.message);
-    process.exit(1);
-  });
-}

@@ -15,7 +15,7 @@
 const assert = require('node:assert/strict');
 
 // --- Stub monday.js network calls before the commenter captures them ---------
-const monday = require('../monday');
+const monday = require('../src/integrations/monday');
 
 let addCommentCalls = [];
 let addCommentImpl = async () => ({ create_update: { id: 'upd_1' } });
@@ -34,7 +34,7 @@ const {
   buildComment,
   resolveTagUsers,
   postInterviewRequests,
-} = require('../interview-commenter');
+} = require('../src/pipeline/comment');
 
 // --- Tiny async test harness -------------------------------------------------
 let passed = 0;

@@ -8,18 +8,19 @@
 //   1. process.env.MONDAY_API_TOKEN
 //   2. .monday-token   (gitignored - never committed)
 //
-// Usage as a module:
-//   const { mondayQuery } = require('./monday');
+// Usage as a module (from elsewhere in src/):
+//   const { mondayQuery } = require('./integrations/monday');
 //   const data = await mondayQuery(`query { me { name email } }`);
 //
 // Usage as a script (connectivity check + lists your boards):
-//   node monday.js
+//   node src/integrations/monday.js
 
 const fs = require('fs');
 const path = require('path');
 
 const API_URL = 'https://api.monday.com/v2';
-const TOKEN_FILE = path.join(__dirname, '.monday-token');
+// .monday-token lives at the repo root (two levels up from src/integrations/).
+const TOKEN_FILE = path.join(__dirname, '..', '..', '.monday-token');
 
 function loadToken() {
   if (process.env.MONDAY_API_TOKEN && process.env.MONDAY_API_TOKEN.trim()) {
@@ -123,6 +124,7 @@ async function getBoardItems(boardId) {
             items {
               id
               name
+              url
               column_values { id text value }
               updates(limit: 10) {
                 id
@@ -154,7 +156,7 @@ async function getBoardItems(boardId) {
  * Returns { boardId, boardName, columns, items }[] — one entry per board.
  */
 async function getCandidateBoardItems() {
-  const { sourceBoardIds } = require('./boards.config');
+  const { sourceBoardIds } = require('../../boards.config');
 
   const results = await Promise.all(
     sourceBoardIds.map(async (boardId) => {
@@ -235,7 +237,7 @@ async function listUsers(filter = {}) {
  * @returns {Promise<string>} The new item's ID.
  */
 async function addToTrackingBoard(itemName, columnValues = {}) {
-  const { trackingBoardId } = require('./boards.config');
+  const { trackingBoardId } = require('../../boards.config');
 
   const data = await mondayQuery(
     `mutation ($boardId: ID!, $itemName: String!, $colVals: JSON) {

@@ -1,6 +1,6 @@
 'use strict';
 
-// tracking-writer.js
+// src/pipeline/track.js
 // Pipeline step 7: add each confirmed-match candidate to your own team tracking
 // board (boards.config.js -> trackingBoardId) so you can track their progress
 // independently of the source boards.
@@ -13,8 +13,8 @@
 // SAFETY: dry-run by default. Prints what it *would* create without writing.
 // Pass { post: true } to actually create the items.
 
-const { addToTrackingBoard, addComment } = require('./monday');
-const { trackingBoardId } = require('./boards.config');
+const { addToTrackingBoard, addComment } = require('../integrations/monday');
+const { trackingBoardId } = require('../../boards.config');
 
 /**
  * Build the summary note attached to a candidate's tracking item.

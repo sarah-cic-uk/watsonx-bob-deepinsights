@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeepInsights — Recruiting Dashboard</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">◆</span>
+      <div>
+        <h1>DeepInsights</h1>
+        <p class="tagline">AI recruiting agent — from job advert to interview requests</p>
+      </div>
+    </div>
+    <button id="settingsBtn" class="btn btn-ghost" title="Settings">⚙ Settings</button>
+  </header>
+
+  <main class="container">
+    <!-- token warning -->
+    <div id="tokenWarning" class="banner banner-warn hidden">
+      No Monday token found. Run <code>npm run setup</code> in the project, then reload.
+    </div>
+
+    <!-- job advert input -->
+    <section class="card">
+      <h2>1 · Describe the open seat</h2>
+
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-mode="paste">Paste advert</button>
+        <button class="tab" data-mode="fields">Enter fields</button>
+      </div>
+
+      <div id="pasteMode" class="mode">
+        <p class="muted">Paste a job advert, or type requirements as <code>Role: … / Band: … / Level: … / Location: … / Skills: …</code></p>
+        <textarea id="jobAd" class="jobad" rows="9" placeholder="Role: Senior Software Engineer
+Band: 7
+Level: L2
+Location: London
+Skills: AWS, JavaScript, Docker, React"></textarea>
+      </div>
+
+      <div id="fieldsMode" class="mode hidden">
+        <p class="muted">Fill in what you know — blanks are ignored.</p>
+        <div class="fields-grid">
+          <label class="field"><span>Role</span><input id="fRole" type="text" placeholder="Senior Software Engineer" /></label>
+          <label class="field"><span>Band</span><input id="fBand" type="text" placeholder="7" /></label>
+          <label class="field"><span>Level</span><input id="fLevel" type="text" placeholder="L2" /></label>
+          <label class="field"><span>Location</span><input id="fLocation" type="text" placeholder="London" /></label>
+          <label class="field field-wide"><span>Skills <small class="muted">(comma-separated)</small></span><input id="fSkills" type="text" placeholder="AWS, JavaScript, Docker, React" /></label>
+        </div>
+      </div>
+
+      <div class="controls">
+        <label class="switch">
+          <input type="checkbox" id="verifyCv" />
+          <span class="slider"></span>
+          <span class="switch-label">Verify CVs against skills <span class="muted">(uses Box · slower)</span></span>
+        </label>
+        <button id="findBtn" class="btn btn-primary">Find candidates →</button>
+      </div>
+    </section>
+
+    <!-- results -->
+    <section id="results" class="card hidden">
+      <div class="results-head">
+        <h2>2 · Candidates found <span id="resultCount" class="pill"></span></h2>
+        <div class="actions">
+          <button id="csvBtn" class="btn btn-secondary">⭳ Download CSV</button>
+          <button id="postBtn" class="btn btn-primary">Request interviews on Monday</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="candTable">
+          <thead><tr id="candHead"></tr></thead>
+          <tbody id="candBody"></tbody>
+        </table>
+      </div>
+      <p id="emptyResults" class="muted hidden">No candidates matched — try widening the criteria or check <strong>Settings</strong>.</p>
+    </section>
+
+    <!-- persistent run log (verbose mode) -->
+    <section id="runLog" class="card hidden">
+      <div class="results-head">
+        <h2>Run log</h2>
+        <button id="clearLog" class="btn btn-ghost btn-sm">Clear</button>
+      </div>
+      <ul id="logList" class="steps log-persist"></ul>
+    </section>
+  </main>
+
+  <!-- loading overlay -->
+  <div id="overlay" class="overlay hidden">
+    <div class="loader-card">
+      <h3 id="loaderTitle">Working…</h3>
+      <div class="progressbar"><div class="bar"></div></div>
+      <ul id="steps" class="steps"></ul>
+    </div>
+  </div>
+
+  <!-- settings modal -->
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>Settings</h2>
+        <button id="closeSettings" class="btn btn-ghost">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="field">
+          <span>Business unit <small class="muted">(leads every comment)</small></span>
+          <input id="businessUnit" type="text" placeholder="MTech" />
+        </label>
+
+        <div class="field">
+          <span>Source boards + who to tag</span>
+          <small class="muted">Board ID (digits) and comma-separated Monday user IDs or emails.</small>
+          <div id="boardRows"></div>
+          <button id="addBoard" class="btn btn-ghost btn-sm">+ Add board</button>
+        </div>
+
+        <label class="field">
+          <span>Output (tracking) board ID</span>
+          <input id="trackingBoardId" type="text" placeholder="18419952794" />
+        </label>
+
+        <label class="field">
+          <span>Default taggers <small class="muted">(for boards without their own)</small></span>
+          <input id="defaultTagUsers" type="text" placeholder="53435570, jane@ibm.com" />
+        </label>
+
+        <label class="field">
+          <span>Skill-match threshold: <strong id="thresholdVal">70%</strong></span>
+          <input id="skillThreshold" type="range" min="0" max="100" step="5" value="70" />
+        </label>
+
+        <label class="switch">
+          <input type="checkbox" id="verbose" />
+          <span class="slider"></span>
+          <span class="switch-label">Verbose logging <small class="muted">(show the step log and keep it on screen after each run)</small></span>
+        </label>
+      </div>
+      <div class="modal-foot">
+        <span id="settingsMsg" class="muted"></span>
+        <div>
+          <button id="cancelSettings" class="btn btn-secondary">Cancel</button>
+          <button id="saveSettings" class="btn btn-primary">Save settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
